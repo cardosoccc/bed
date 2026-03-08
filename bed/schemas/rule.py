@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict
 
 class RuleCreate(BaseModel):
     description: str
+    proportion: float | None = None
     invested_value: float | None = None
     current_value: float | None = None
     asset_class: str | None = None
@@ -20,6 +21,7 @@ class RuleRead(BaseModel):
 
     id: uuid.UUID
     description: str
+    proportion: float | None
     invested_value: float | None
     current_value: float | None
     asset_class: str | None
@@ -32,6 +34,7 @@ class RuleRead(BaseModel):
 
 class RuleUpdate(BaseModel):
     description: str | None = None
+    proportion: float | None = None
     invested_value: float | None = None
     current_value: float | None = None
     asset_class: str | None = None

@@ -78,6 +78,32 @@ async def test_delete_rule_not_found(db_session):
 
 
 @pytest.mark.asyncio
+async def test_create_rule_with_proportion(db_session):
+    data = RuleCreate(
+        description="30% equity",
+        proportion=30.0,
+        asset_class="equity",
+    )
+    rule = await service.create_rule(db_session, data)
+    assert rule.description == "30% equity"
+    assert float(rule.proportion) == 30.0
+    assert rule.asset_class == "equity"
+
+
+@pytest.mark.asyncio
+async def test_update_rule_proportion(db_session):
+    created = await service.create_rule(db_session, RuleCreate(
+        description="Proportion Rule", proportion=20.0
+    ))
+    updated = await service.update_rule(db_session, created.id, RuleUpdate(
+        proportion=35.0
+    ))
+    assert updated is not None
+    assert float(updated.proportion) == 35.0
+    assert updated.description == "Proportion Rule"
+
+
+@pytest.mark.asyncio
 async def test_create_rule_with_tags(db_session):
     data = RuleCreate(
         description="Tag Rule",
