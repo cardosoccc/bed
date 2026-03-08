@@ -41,7 +41,7 @@ def portfolio_init():
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     run_async(_run())
     _save_sync_meta({"version": 0})
-    click.echo(f"Portfolio initialized at {DB_PATH}")
+    click.echo(f"portfolio initialized at {DB_PATH}")
 
 
 @portfolio.command("destroy")
@@ -50,9 +50,9 @@ def portfolio_destroy():
     """Destroy the portfolio database."""
     if DB_PATH.exists():
         DB_PATH.unlink()
-        click.echo("Portfolio destroyed.")
+        click.echo("portfolio destroyed.")
     else:
-        click.echo("No portfolio found.")
+        click.echo("no portfolio found.")
 
 
 @portfolio.command("push")
@@ -62,11 +62,11 @@ def portfolio_push(force):
     cfg = load_config()
     bucket_url = cfg.get("bucket")
     if not bucket_url:
-        click.echo("No bucket configured. Use: bed config set bucket s3://... or gs://...")
+        click.echo("no bucket configured. use: bed config set bucket s3://... or gs://...")
         return
 
     if not DB_PATH.exists():
-        click.echo("No portfolio database found. Run 'bed portfolio init' first.")
+        click.echo("no portfolio database found. run 'bed portfolio init' first.")
         return
 
     provider = get_provider(bucket_url)
@@ -76,7 +76,7 @@ def portfolio_push(force):
     if remote_meta and not force:
         if remote_meta.get("version", 0) > local_meta.get("version", 0):
             click.echo(
-                "Remote version is newer. Pull first or use --force to overwrite."
+                "remote version is newer. pull first or use --force to overwrite."
             )
             return
 
@@ -88,7 +88,7 @@ def portfolio_push(force):
     new_meta = {"version": new_version}
     provider.upload_json(new_meta, "sync_meta.json")
     _save_sync_meta(new_meta)
-    click.echo(f"Portfolio pushed (version {new_version}).")
+    click.echo(f"portfolio pushed (version {new_version}).")
 
 
 @portfolio.command("pull")
@@ -98,21 +98,21 @@ def portfolio_pull(force):
     cfg = load_config()
     bucket_url = cfg.get("bucket")
     if not bucket_url:
-        click.echo("No bucket configured. Use: bed config set bucket s3://... or gs://...")
+        click.echo("no bucket configured. use: bed config set bucket s3://... or gs://...")
         return
 
     provider = get_provider(bucket_url)
     remote_meta = provider.read_json("sync_meta.json")
 
     if not remote_meta:
-        click.echo("No remote portfolio found.")
+        click.echo("no remote portfolio found.")
         return
 
     local_meta = _load_sync_meta()
     if not force:
         if local_meta.get("version", 0) > remote_meta.get("version", 0):
             click.echo(
-                "Local version is newer. Push first or use --force to overwrite."
+                "local version is newer. push first or use --force to overwrite."
             )
             return
 
@@ -121,8 +121,8 @@ def portfolio_pull(force):
     if DB_PATH.exists():
         backup = DB_PATH.with_suffix(".db.bak")
         shutil.copy2(DB_PATH, backup)
-        click.echo(f"Backup saved to {backup}")
+        click.echo(f"backup saved to {backup}")
 
     provider.download("bed.db", DB_PATH)
     _save_sync_meta(remote_meta)
-    click.echo(f"Portfolio pulled (version {remote_meta.get('version', 0)}).")
+    click.echo(f"portfolio pulled (version {remote_meta.get('version', 0)}).")

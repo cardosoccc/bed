@@ -72,7 +72,7 @@ class TestSyncCommands:
         ):
             result = runner.invoke(cli, ["portfolio", "push"])
             assert result.exit_code == 0
-            assert "Remote version is newer" in result.output
+            assert "remote version is newer" in result.output
 
     def test_push_force(self, sync_env):
         runner, config_dir, db_path, config_file, sync_meta_file, provider = sync_env
@@ -120,7 +120,7 @@ class TestSyncCommands:
         ):
             result = runner.invoke(cli, ["portfolio", "pull"])
             assert result.exit_code == 0
-            assert "No remote portfolio found" in result.output
+            assert "no remote portfolio found" in result.output
 
     def test_pull_conflict(self, sync_env):
         runner, config_dir, db_path, config_file, sync_meta_file, provider = sync_env
@@ -136,4 +136,4 @@ class TestSyncCommands:
         ):
             result = runner.invoke(cli, ["portfolio", "pull"])
             assert result.exit_code == 0
-            assert "Local version is newer" in result.output
+            assert "local version is newer" in result.output

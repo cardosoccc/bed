@@ -24,7 +24,7 @@ def list_assets():
 
     items = run_async(_run())
     if not items:
-        click.echo("No assets found.")
+        click.echo("no assets found.")
         return
 
     table = []
@@ -41,8 +41,9 @@ def list_assets():
             a.subcategory or "",
             ", ".join(a.tags) if a.tags else "",
         ])
-    headers = ["#", "Name", "Class", "Type", "Qty", "Initial", "Current", "Category", "Subcat", "Tags"]
-    click.echo(tabulate(table, headers=headers, tablefmt="simple"))
+    headers = ["#", "name", "class", "type", "qty", "initial", "current", "category", "subcat", "tags"]
+    colalign = ("right", "left", "left", "left", "right", "right", "right", "left", "left", "left")
+    click.echo(tabulate(table, headers=headers, tablefmt="simple", colalign=colalign))
 
 
 @asset.command("create")
@@ -82,7 +83,7 @@ def create_asset(name, description, asset_class, asset_type, quantity, initial_v
                 tags=[t.strip() for t in tags.split(",")] if tags else [],
             )
             result = await service.create_asset(db, data)
-            click.echo(f"Asset '{result.name}' created.")
+            click.echo(f"asset '{result.name}' created.")
 
     run_async(_run())
 
@@ -114,7 +115,7 @@ def edit_asset(identifier, name, description, asset_class, asset_type, quantity,
         async with get_session() as db:
             asset_id = await resolve_asset_id(db, identifier)
             if not asset_id:
-                click.echo(f"Asset '{identifier}' not found.")
+                click.echo(f"asset '{identifier}' not found.")
                 return
 
             data = AssetUpdate(
@@ -131,9 +132,9 @@ def edit_asset(identifier, name, description, asset_class, asset_type, quantity,
             )
             result = await service.update_asset(db, asset_id, data)
             if result:
-                click.echo(f"Asset '{result.name}' updated.")
+                click.echo(f"asset '{result.name}' updated.")
             else:
-                click.echo(f"Asset '{identifier}' not found.")
+                click.echo(f"asset '{identifier}' not found.")
 
     run_async(_run())
 
@@ -148,11 +149,11 @@ def delete_asset(identifier):
         async with get_session() as db:
             asset_id = await resolve_asset_id(db, identifier)
             if not asset_id:
-                click.echo(f"Asset '{identifier}' not found.")
+                click.echo(f"asset '{identifier}' not found.")
                 return
             if await service.delete_asset(db, asset_id):
-                click.echo("Asset deleted.")
+                click.echo("asset deleted.")
             else:
-                click.echo(f"Asset '{identifier}' not found.")
+                click.echo(f"asset '{identifier}' not found.")
 
     run_async(_run())

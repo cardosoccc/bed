@@ -70,7 +70,7 @@ def config_list():
     """List current configurations."""
     cfg = load_config()
     if not cfg:
-        click.echo("No configuration values set.")
+        click.echo("no configuration values set.")
         return
     for k, v in cfg.items():
         click.echo(f"{k}: {v}")

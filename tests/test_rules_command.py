@@ -35,7 +35,7 @@ class TestRuleCommands:
         with patch("bed.commands.rules.get_session", session):
             result = runner.invoke(cli, ["rule", "list"])
             assert result.exit_code == 0
-            assert "No rules found" in result.output
+            assert "no rules found" in result.output
 
     def test_create_and_list(self, runner_env):
         runner, session = runner_env

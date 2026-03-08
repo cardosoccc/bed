@@ -10,7 +10,7 @@ def configure_aws(access_key_id, secret_access_key):
     """Configure AWS credentials for push/pull."""
     set_credential("aws_access_key_id", access_key_id)
     set_credential("aws_secret_access_key", secret_access_key)
-    click.echo("AWS credentials saved.")
+    click.echo("aws credentials saved.")
 
 
 @click.command("gcp")
@@ -18,4 +18,4 @@ def configure_aws(access_key_id, secret_access_key):
 def configure_gcp(key_path):
     """Configure GCP credentials for push/pull."""
     set_credential("gcp_service_account_key_path", key_path)
-    click.echo("GCP credentials saved.")
+    click.echo("gcp credentials saved.")

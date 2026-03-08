@@ -36,7 +36,7 @@ class TestAssetCommands:
         with patch("bed.commands.assets.get_session", session):
             result = runner.invoke(cli, ["asset", "list"])
             assert result.exit_code == 0
-            assert "No assets found" in result.output
+            assert "no assets found" in result.output
 
     def test_create_and_list(self, runner_env):
         runner, session = runner_env
@@ -84,7 +84,7 @@ class TestAssetCommands:
             assert "deleted" in result.output
 
             result = runner.invoke(cli, ["asset", "list"])
-            assert "No assets found" in result.output
+            assert "no assets found" in result.output
 
     def test_alias_a_c(self, runner_env):
         runner, session = runner_env

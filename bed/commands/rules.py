@@ -23,7 +23,7 @@ def list_rules():
 
     items = run_async(_run())
     if not items:
-        click.echo("No rules found.")
+        click.echo("no rules found.")
         return
 
     table = []
@@ -39,8 +39,9 @@ def list_rules():
             r.subcategory or "",
             ", ".join(r.tags) if r.tags else "",
         ])
-    headers = ["#", "Description", "Invested", "Current", "Class", "Type", "Category", "Subcat", "Tags"]
-    click.echo(tabulate(table, headers=headers, tablefmt="simple"))
+    headers = ["#", "description", "invested", "current", "class", "type", "category", "subcat", "tags"]
+    colalign = ("right", "left", "right", "right", "left", "left", "left", "left", "left")
+    click.echo(tabulate(table, headers=headers, tablefmt="simple", colalign=colalign))
 
 
 @rule.command("create")
@@ -68,7 +69,7 @@ def create_rule(description, invested_value, current_value, asset_class, asset_t
                 tags=[t.strip() for t in tags.split(",")] if tags else [],
             )
             result = await service.create_rule(db, data)
-            click.echo(f"Rule '{result.description}' created.")
+            click.echo(f"rule '{result.description}' created.")
 
     run_async(_run())
 
@@ -90,7 +91,7 @@ def edit_rule(identifier, description, invested_value, current_value, asset_clas
         async with get_session() as db:
             rid = await resolve_rule_id(db, identifier)
             if not rid:
-                click.echo(f"Rule '{identifier}' not found.")
+                click.echo(f"rule '{identifier}' not found.")
                 return
 
             data = RuleUpdate(
@@ -105,9 +106,9 @@ def edit_rule(identifier, description, invested_value, current_value, asset_clas
             )
             result = await service.update_rule(db, rid, data)
             if result:
-                click.echo(f"Rule '{result.description}' updated.")
+                click.echo(f"rule '{result.description}' updated.")
             else:
-                click.echo(f"Rule '{identifier}' not found.")
+                click.echo(f"rule '{identifier}' not found.")
 
     run_async(_run())
 
@@ -122,11 +123,11 @@ def delete_rule(identifier):
         async with get_session() as db:
             rid = await resolve_rule_id(db, identifier)
             if not rid:
-                click.echo(f"Rule '{identifier}' not found.")
+                click.echo(f"rule '{identifier}' not found.")
                 return
             if await service.delete_rule(db, rid):
-                click.echo("Rule deleted.")
+                click.echo("rule deleted.")
             else:
-                click.echo(f"Rule '{identifier}' not found.")
+                click.echo(f"rule '{identifier}' not found.")
 
     run_async(_run())
