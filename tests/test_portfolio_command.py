@@ -55,7 +55,7 @@ class TestPortfolioCommands:
         ):
             result = runner.invoke(cli, ["portfolio", "destroy", "--yes"])
             assert result.exit_code == 0
-            assert "No portfolio found" in result.output
+            assert "no portfolio found" in result.output
 
     def test_push_no_bucket(self, runner_env):
         runner, tmp_path, config_dir, db_path, sync_meta_file = runner_env
@@ -66,7 +66,7 @@ class TestPortfolioCommands:
         ):
             result = runner.invoke(cli, ["portfolio", "push"])
             assert result.exit_code == 0
-            assert "No bucket configured" in result.output
+            assert "no bucket configured" in result.output
 
     def test_pull_no_bucket(self, runner_env):
         runner, tmp_path, config_dir, db_path, sync_meta_file = runner_env
@@ -77,7 +77,7 @@ class TestPortfolioCommands:
         ):
             result = runner.invoke(cli, ["portfolio", "pull"])
             assert result.exit_code == 0
-            assert "No bucket configured" in result.output
+            assert "no bucket configured" in result.output
 
     def test_alias_p_init(self, runner_env):
         runner, tmp_path, config_dir, db_path, sync_meta_file = runner_env
