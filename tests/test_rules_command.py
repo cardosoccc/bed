@@ -95,6 +95,22 @@ class TestRuleCommands:
             assert result.exit_code == 0
             assert "Listed Rule" in result.output
 
+    def test_create_with_proportion(self, runner_env):
+        runner, session = runner_env
+        with patch("bed.commands.rules.get_session", session):
+            result = runner.invoke(cli, [
+                "rule", "create",
+                "-d", "30% equity",
+                "-p", "30",
+                "--class", "equity",
+            ])
+            assert result.exit_code == 0
+            assert "created" in result.output
+
+            result = runner.invoke(cli, ["rule", "list"])
+            assert result.exit_code == 0
+            assert "30.00%" in result.output
+
     def test_create_with_tags(self, runner_env):
         runner, session = runner_env
         with patch("bed.commands.rules.get_session", session):

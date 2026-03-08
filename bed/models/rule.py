@@ -12,6 +12,7 @@ class Rule(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     description: Mapped[str] = mapped_column(String(500), nullable=False)
+    proportion: Mapped[float | None] = mapped_column(Numeric(precision=5, scale=2), nullable=True)
     invested_value: Mapped[float | None] = mapped_column(Numeric(precision=18, scale=2), nullable=True)
     current_value: Mapped[float | None] = mapped_column(Numeric(precision=18, scale=2), nullable=True)
     asset_class: Mapped[str | None] = mapped_column(String(255), nullable=True)
