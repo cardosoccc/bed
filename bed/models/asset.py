@@ -1,7 +1,7 @@
 import enum
 import uuid
 
-from sqlalchemy import Enum, JSON, Numeric, String, ForeignKey, func
+from sqlalchemy import Enum, JSON, Numeric, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.types import Uuid, DateTime
 
@@ -34,9 +34,6 @@ class Asset(Base):
     quantity: Mapped[float] = mapped_column(Numeric(precision=18, scale=8), nullable=False, default=0)
     initial_value: Mapped[float] = mapped_column(Numeric(precision=18, scale=2), nullable=False, default=0)
     current_value: Mapped[float] = mapped_column(Numeric(precision=18, scale=2), nullable=False, default=0)
-    goal_id: Mapped[uuid.UUID | None] = mapped_column(
-        Uuid, ForeignKey("goals.id", ondelete="SET NULL"), nullable=True
-    )
     category: Mapped[str | None] = mapped_column(String(255), nullable=True)
     subcategory: Mapped[str | None] = mapped_column(String(255), nullable=True)
     tags: Mapped[list] = mapped_column(JSON, default=list)

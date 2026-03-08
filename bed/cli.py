@@ -3,7 +3,6 @@ import copy
 import click
 
 from bed.commands.assets import asset
-from bed.commands.goals import goal
 from bed.commands.rules import rule
 from bed.commands.db_commands import portfolio
 from bed.commands.credentials import configure_aws, configure_gcp
@@ -48,7 +47,6 @@ def cli():
 
 cli.add_command(portfolio)
 cli.add_command(asset)
-cli.add_command(goal)
 cli.add_command(rule)
 
 
@@ -84,21 +82,19 @@ config.add_command(configure_gcp)
 
 # Subcommand aliases (e=edit, c=create, d=delete, l=list)
 _crud_aliases = {"e": "edit", "c": "create", "d": "delete", "l": "list"}
-for _grp in (asset, goal, rule):
+for _grp in (asset, rule):
     _add_subcommand_aliases(_grp, _crud_aliases)
 
 _add_subcommand_aliases(config, {"s": "set"})
 
 # Command group aliases — single letter
 _add_visible_alias(cli, asset, "a", "asset")
-_add_visible_alias(cli, goal, "g", "goal")
 _add_visible_alias(cli, rule, "r", "rule")
 _add_visible_alias(cli, portfolio, "p", "portfolio")
 _add_visible_alias(cli, cli.commands["config"], "c", "config")
 
 # Double-letter list shortcuts
 cli.add_command(_list_alias(asset.commands["list"], "a list", "assets"), name="aa")
-cli.add_command(_list_alias(goal.commands["list"], "g list", "goals"), name="gg")
 cli.add_command(_list_alias(rule.commands["list"], "r list", "rules"), name="rr")
 
 

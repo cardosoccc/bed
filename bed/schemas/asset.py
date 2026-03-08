@@ -14,7 +14,6 @@ class AssetCreate(BaseModel):
     quantity: float = 0
     initial_value: float = 0
     current_value: float = 0
-    goal_id: uuid.UUID | None = None
     category: str | None = None
     subcategory: str | None = None
     tags: list[str] = []
@@ -31,7 +30,6 @@ class AssetRead(BaseModel):
     quantity: float
     initial_value: float
     current_value: float
-    goal_id: uuid.UUID | None
     category: str | None
     subcategory: str | None
     tags: list[str]
@@ -46,7 +44,6 @@ class AssetUpdate(BaseModel):
     quantity: float | None = None
     initial_value: float | None = None
     current_value: float | None = None
-    goal_id: uuid.UUID | None = None
     category: str | None = None
     subcategory: str | None = None
     tags: list[str] | None = None
