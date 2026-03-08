@@ -20,3 +20,8 @@
 
 - for every feature being iomplemented, a complete set of test scenarios should be planned and proposed;
 - after confirmation, tests should be implemented first, and features should make tests pass;
+
+## tips
+
+- run tests with uv
+- read the Makefile when beginning to work in the repo

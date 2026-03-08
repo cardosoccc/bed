@@ -27,28 +27,6 @@ async def resolve_asset_id(db: AsyncSession, identifier: str) -> uuid.UUID | Non
     return asset.id if asset else None
 
 
-async def resolve_goal_id(db: AsyncSession, identifier: str) -> uuid.UUID | None:
-    from bed.models.goal import Goal
-
-    try:
-        return uuid.UUID(identifier)
-    except ValueError:
-        pass
-
-    try:
-        idx = int(identifier)
-        result = await db.execute(select(Goal).order_by(Goal.description))
-        goals = list(result.scalars().all())
-        if 1 <= idx <= len(goals):
-            return goals[idx - 1].id
-        return None
-    except ValueError:
-        pass
-
-    result = await db.execute(select(Goal).where(Goal.description == identifier))
-    goal = result.scalars().first()
-    return goal.id if goal else None
-
 
 async def resolve_rule_id(db: AsyncSession, identifier: str) -> uuid.UUID | None:
     from bed.models.rule import Rule

@@ -2,7 +2,7 @@ import click
 from tabulate import tabulate
 
 from bed.commands.db import get_session, run_async
-from bed.commands.utils import resolve_asset_id, resolve_goal_id
+from bed.commands.utils import resolve_asset_id
 from bed.models.asset import AssetClass, AssetType
 from bed.schemas.asset import AssetCreate, AssetUpdate
 from bed.services import assets as service
@@ -61,22 +61,14 @@ def list_assets():
 @click.option("--quantity", "-q", type=float, default=0, help="Quantity")
 @click.option("--initial-value", "-i", type=float, default=0, help="Initial value")
 @click.option("--current-value", "-c", type=float, default=0, help="Current value")
-@click.option("--goal", "-g", default=None, help="Goal ID, number, or description")
 @click.option("--category", default=None, help="Category")
 @click.option("--subcategory", default=None, help="Subcategory")
 @click.option("--tags", "-t", default=None, help="Comma-separated tags")
-def create_asset(name, description, asset_class, asset_type, quantity, initial_value, current_value, goal, category, subcategory, tags):
+def create_asset(name, description, asset_class, asset_type, quantity, initial_value, current_value, category, subcategory, tags):
     """Create a new asset."""
 
     async def _run():
         async with get_session() as db:
-            goal_id = None
-            if goal:
-                goal_id = await resolve_goal_id(db, goal)
-                if not goal_id:
-                    click.echo(f"Goal '{goal}' not found.")
-                    return
-
             data = AssetCreate(
                 name=name,
                 description=description,
@@ -85,7 +77,6 @@ def create_asset(name, description, asset_class, asset_type, quantity, initial_v
                 quantity=quantity,
                 initial_value=initial_value,
                 current_value=current_value,
-                goal_id=goal_id,
                 category=category,
                 subcategory=subcategory,
                 tags=[t.strip() for t in tags.split(",")] if tags else [],
@@ -113,11 +104,10 @@ def create_asset(name, description, asset_class, asset_type, quantity, initial_v
 @click.option("--quantity", "-q", type=float, default=None, help="Quantity")
 @click.option("--initial-value", "-i", type=float, default=None, help="Initial value")
 @click.option("--current-value", "-c", type=float, default=None, help="Current value")
-@click.option("--goal", "-g", default=None, help="Goal ID, number, or description")
 @click.option("--category", default=None, help="Category")
 @click.option("--subcategory", default=None, help="Subcategory")
 @click.option("--tags", "-t", default=None, help="Comma-separated tags")
-def edit_asset(identifier, name, description, asset_class, asset_type, quantity, initial_value, current_value, goal, category, subcategory, tags):
+def edit_asset(identifier, name, description, asset_class, asset_type, quantity, initial_value, current_value, category, subcategory, tags):
     """Edit an existing asset."""
 
     async def _run():
@@ -127,13 +117,6 @@ def edit_asset(identifier, name, description, asset_class, asset_type, quantity,
                 click.echo(f"Asset '{identifier}' not found.")
                 return
 
-            goal_id = None
-            if goal:
-                goal_id = await resolve_goal_id(db, goal)
-                if not goal_id:
-                    click.echo(f"Goal '{goal}' not found.")
-                    return
-
             data = AssetUpdate(
                 name=name,
                 description=description,
@@ -142,7 +125,6 @@ def edit_asset(identifier, name, description, asset_class, asset_type, quantity,
                 quantity=quantity,
                 initial_value=initial_value,
                 current_value=current_value,
-                goal_id=goal_id,
                 category=category,
                 subcategory=subcategory,
                 tags=[t.strip() for t in tags.split(",")] if tags else None,
