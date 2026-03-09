@@ -1,4 +1,4 @@
-.PHONY: venv setup test lint clean
+.PHONY: venv setup test lint clean migrate
 
 PYTHON := python3
 UV := uv
@@ -15,6 +15,9 @@ test:
 lint:
 	$(UV) run ruff check bed/
 	$(UV) run ruff format --check bed/
+
+migrate:
+	$(UV) run python -m bed.migrate
 
 clean:
 	rm -rf .venv __pycache__ dist build .pytest_cache

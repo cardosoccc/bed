@@ -37,3 +37,18 @@ async def create_tables():
     Path.home().joinpath(".bed").mkdir(parents=True, exist_ok=True)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+
+async def migrate():
+    """Add columns that may be missing from older databases."""
+    async with engine.begin() as conn:
+        await _add_column_if_missing(conn, "rules", "proportion", "NUMERIC(5, 2)")
+
+
+async def _add_column_if_missing(conn, table, column, col_type):
+    result = await conn.exec_driver_sql(f"PRAGMA table_info({table})")
+    columns = [row[1] for row in result]
+    if column not in columns:
+        await conn.exec_driver_sql(
+            f"ALTER TABLE {table} ADD COLUMN {column} {col_type}"
+        )
