@@ -67,10 +67,10 @@ async def test_class_with_rules(db_session):
         current_value=2000,
     ))
     await rule_service.create_rule(db_session, RuleCreate(
-        description="60% equity", proportion=60, asset_class="equity",
+        description="60% equity", proportion=0.60, asset_class="equity",
     ))
     await rule_service.create_rule(db_session, RuleCreate(
-        description="40% bonds", proportion=40, asset_class="fixed-income",
+        description="40% bonds", proportion=0.40, asset_class="fixed-income",
     ))
 
     status = await get_portfolio_status(db_session)
@@ -124,7 +124,7 @@ async def test_tag_with_rules(db_session):
         current_value=4000, tags=["defensive"],
     ))
     await rule_service.create_rule(db_session, RuleCreate(
-        description="50% growth", proportion=50, tags=["growth"],
+        description="50% growth", proportion=0.50, tags=["growth"],
     ))
 
     status = await get_portfolio_status(db_session)
@@ -146,7 +146,7 @@ async def test_class_from_rule_only(db_session):
         current_value=10000,
     ))
     await rule_service.create_rule(db_session, RuleCreate(
-        description="30% bonds", proportion=30, asset_class="fixed-income",
+        description="30% bonds", proportion=0.30, asset_class="fixed-income",
     ))
 
     status = await get_portfolio_status(db_session)

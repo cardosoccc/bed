@@ -116,8 +116,8 @@ class TestPortfolioStatus:
             _create_asset(runner, cli, "Stock1", "equity", "stock", 7000, 8000)
             _create_asset(runner, cli, "Bond1", "fixed-income", "bond", 2000, 2000)
 
-            _create_rule(runner, cli, "60% equity", proportion=60, asset_class="equity")
-            _create_rule(runner, cli, "40% bonds", proportion=40, asset_class="fixed-income")
+            _create_rule(runner, cli, "60% equity", proportion=0.60, asset_class="equity")
+            _create_rule(runner, cli, "40% bonds", proportion=0.40, asset_class="fixed-income")
 
             result = runner.invoke(cli, ["portfolio", "status"])
             assert result.exit_code == 0
@@ -160,8 +160,8 @@ class TestPortfolioStatus:
             _create_asset(runner, cli, "Stock1", "equity", "stock", 5000, 6000, tags="growth")
             _create_asset(runner, cli, "Bond1", "fixed-income", "bond", 4000, 4000, tags="defensive")
 
-            _create_rule(runner, cli, "50% growth", proportion=50, tags="growth")
-            _create_rule(runner, cli, "50% defensive", proportion=50, tags="defensive")
+            _create_rule(runner, cli, "50% growth", proportion=0.50, tags="growth")
+            _create_rule(runner, cli, "50% defensive", proportion=0.50, tags="defensive")
 
             result = runner.invoke(cli, ["portfolio", "status"])
             assert result.exit_code == 0

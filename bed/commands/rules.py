@@ -31,7 +31,7 @@ def list_rules():
         table.append([
             i,
             r.description,
-            f"{r.proportion:.2f}%" if r.proportion is not None else "",
+            f"{float(r.proportion) * 100:.2f}%" if r.proportion is not None else "",
             f"{r.invested_value:.2f}" if r.invested_value is not None else "",
             f"{r.current_value:.2f}" if r.current_value is not None else "",
             r.asset_class or "",
@@ -47,7 +47,7 @@ def list_rules():
 
 @rule.command("create")
 @click.option("--description", "-d", required=True, help="Rule description")
-@click.option("--proportion", "-p", type=float, default=None, help="Target portfolio proportion (%)")
+@click.option("--proportion", "-p", type=float, default=None, help="Target portfolio proportion (0-1, e.g. 0.66 = 66%)")
 @click.option("--invested-value", "-i", type=float, default=None, help="Invested value limit")
 @click.option("--current-value", "-c", type=float, default=None, help="Current value limit")
 @click.option("--class", "asset_class", default=None, help="Asset class filter")
@@ -80,7 +80,7 @@ def create_rule(description, proportion, invested_value, current_value, asset_cl
 @rule.command("edit")
 @click.argument("identifier")
 @click.option("--description", "-d", default=None, help="Rule description")
-@click.option("--proportion", "-p", type=float, default=None, help="Target portfolio proportion (%)")
+@click.option("--proportion", "-p", type=float, default=None, help="Target portfolio proportion (0-1, e.g. 0.66 = 66%)")
 @click.option("--invested-value", "-i", type=float, default=None, help="Invested value limit")
 @click.option("--current-value", "-c", type=float, default=None, help="Current value limit")
 @click.option("--class", "asset_class", default=None, help="Asset class filter")
