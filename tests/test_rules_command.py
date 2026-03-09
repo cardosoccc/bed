@@ -101,7 +101,7 @@ class TestRuleCommands:
             result = runner.invoke(cli, [
                 "rule", "create",
                 "-d", "30% equity",
-                "-p", "30",
+                "-p", "0.30",
                 "--class", "equity",
             ])
             assert result.exit_code == 0
