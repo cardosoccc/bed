@@ -86,6 +86,7 @@ for _grp in (asset, rule):
     _add_subcommand_aliases(_grp, _crud_aliases)
 
 _add_subcommand_aliases(config, {"s": "set"})
+_add_subcommand_aliases(portfolio, {"s": "status"})
 
 # Command group aliases — single letter
 _add_visible_alias(cli, asset, "a", "asset")
@@ -96,6 +97,7 @@ _add_visible_alias(cli, cli.commands["config"], "c", "config")
 # Double-letter list shortcuts
 cli.add_command(_list_alias(asset.commands["list"], "a list", "assets"), name="aa")
 cli.add_command(_list_alias(rule.commands["list"], "r list", "rules"), name="rr")
+cli.add_command(_list_alias(portfolio.commands["status"], "p status", "portfolio status"), name="pp")
 
 
 if __name__ == "__main__":
