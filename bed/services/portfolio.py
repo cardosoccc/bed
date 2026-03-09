@@ -63,14 +63,19 @@ async def get_portfolio_status(db: AsyncSession) -> PortfolioStatus:
         total = class_totals.get(name, 0.0)
         pct = (total / total_current * 100) if total_current else 0.0
         rule = class_rules.get(name)
-        if rule and rule.current_value is not None:
+        if rule is None:
+            target = total
+            target_pct = pct
+            diff = 0.0
+        elif rule.current_value is not None:
             target = float(rule.current_value)
             target_pct = (target / total_current * 100) if total_current else 0.0
+            diff = total - target
         else:
-            proportion = float(rule.proportion) if rule and rule.proportion is not None else 0.0
+            proportion = float(rule.proportion) if rule.proportion is not None else 0.0
             target_pct = proportion * 100
             target = total_current * proportion if proportion else 0.0
-        diff = total - target
+            diff = total - target
         class_rows.append(ClassRow(
             name=name, total=total, pct=pct,
             target=target, target_pct=target_pct, diff=diff,
@@ -95,14 +100,19 @@ async def get_portfolio_status(db: AsyncSession) -> PortfolioStatus:
         total = tag_totals.get(name, 0.0)
         pct = (total / total_current * 100) if total_current else 0.0
         rule = tag_rules.get(name)
-        if rule and rule.current_value is not None:
+        if rule is None:
+            target = total
+            target_pct = pct
+            diff = 0.0
+        elif rule.current_value is not None:
             target = float(rule.current_value)
             target_pct = (target / total_current * 100) if total_current else 0.0
+            diff = total - target
         else:
-            proportion = float(rule.proportion) if rule and rule.proportion is not None else 0.0
+            proportion = float(rule.proportion) if rule.proportion is not None else 0.0
             target_pct = proportion * 100
             target = total_current * proportion if proportion else 0.0
-        diff = total - target
+            diff = total - target
         tag_rows.append(TagRow(
             name=name, total=total, pct=pct,
             target=target, target_pct=target_pct, diff=diff,

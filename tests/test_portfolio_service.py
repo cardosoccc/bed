@@ -134,8 +134,9 @@ async def test_tag_with_rules(db_session):
     assert growth.diff == pytest.approx(1000)
 
     defensive = next(t for t in status.tags if t.name == "defensive")
-    assert defensive.target == 0.0
-    assert defensive.target_pct == 0.0
+    assert defensive.target == 4000
+    assert defensive.target_pct == pytest.approx(40.0)
+    assert defensive.diff == 0.0
 
 
 @pytest.mark.asyncio
