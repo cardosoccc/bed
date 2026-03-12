@@ -17,7 +17,9 @@ def asset():
 
 @asset.command("list")
 @click.option("--update", "-u", is_flag=True, default=False, help="Update stock prices before listing")
-def list_assets(update):
+@click.option("--category", is_flag=True, default=False, help="Show category column")
+@click.option("--subcat", is_flag=True, default=False, help="Show subcategory column")
+def list_assets(update, category, subcat):
     """List all assets."""
 
     async def _run():
@@ -34,7 +36,7 @@ def list_assets(update):
 
     table = []
     for i, a in enumerate(items, 1):
-        table.append([
+        row = [
             i,
             a.name,
             a.asset_class.value if a.asset_class else "",
@@ -42,13 +44,25 @@ def list_assets(update):
             f"{a.quantity:.4f}",
             f"{a.initial_value:.2f}",
             f"{a.current_value:.2f}",
-            a.category or "",
-            a.subcategory or "",
-            ", ".join(a.tags) if a.tags else "",
-        ])
-    headers = ["#", "name", "class", "type", "qty", "initial", "current", "category", "subcat", "tags"]
-    colalign = ("right", "left", "left", "left", "right", "right", "right", "left", "left", "left")
-    click.echo(tabulate(table, headers=headers, tablefmt="simple", colalign=colalign))
+        ]
+        if category:
+            row.append(a.category or "")
+        if subcat:
+            row.append(a.subcategory or "")
+        row.append(", ".join(a.tags) if a.tags else "")
+        table.append(row)
+
+    headers = ["#", "name", "class", "type", "qty", "initial", "current"]
+    colalign = ["right", "left", "left", "left", "right", "right", "right"]
+    if category:
+        headers.append("category")
+        colalign.append("left")
+    if subcat:
+        headers.append("subcat")
+        colalign.append("left")
+    headers.append("tags")
+    colalign.append("left")
+    click.echo(tabulate(table, headers=headers, tablefmt="simple", colalign=tuple(colalign)))
 
 
 @asset.command("create")
