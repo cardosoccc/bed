@@ -44,7 +44,7 @@ class TestStocksCommands:
         with patch("bed.commands.stocks.get_session", session):
             result = runner.invoke(cli, ["stocks", "list"])
             assert result.exit_code == 0
-            assert "no tickers found" in result.output
+            assert "no stocks found" in result.output
 
     def test_add_and_list(self, runner_env):
         runner, session = runner_env
@@ -117,14 +117,14 @@ class TestStocksCommands:
         with patch("bed.commands.stocks.get_session", session):
             result = runner.invoke(cli, ["s", "l"])
             assert result.exit_code == 0
-            assert "no tickers found" in result.output
+            assert "no stocks found" in result.output
 
     def test_alias_ss(self, runner_env):
         runner, session = runner_env
         with patch("bed.commands.stocks.get_session", session):
             result = runner.invoke(cli, ["ss"])
             assert result.exit_code == 0
-            assert "no tickers found" in result.output
+            assert "no stocks found" in result.output
 
     def test_ticker_lowercase(self, runner_env):
         runner, session = runner_env

@@ -101,7 +101,7 @@ _add_visible_alias(cli, cli.commands["config"], "c", "config")
 # Double-letter list shortcuts
 cli.add_command(_list_alias(asset.commands["list"], "a list", "assets"), name="aa")
 cli.add_command(_list_alias(rule.commands["list"], "r list", "rules"), name="rr")
-cli.add_command(_list_alias(stocks.commands["list"], "s list", "tickers"), name="ss")
+cli.add_command(_list_alias(stocks.commands["list"], "s list", "stocks"), name="ss")
 cli.add_command(_list_alias(portfolio.commands["status"], "p status", "portfolio status"), name="pp")
 
 

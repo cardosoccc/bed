@@ -43,6 +43,16 @@ async def migrate():
     """Add columns that may be missing from older databases."""
     async with engine.begin() as conn:
         await _add_column_if_missing(conn, "rules", "proportion", "NUMERIC(5, 2)")
+        await _rename_table_if_exists(conn, "tickers", "stocks")
+
+
+async def _rename_table_if_exists(conn, old_name, new_name):
+    result = await conn.exec_driver_sql(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name=:old",
+        {"old": old_name},
+    )
+    if result.first():
+        await conn.exec_driver_sql(f"ALTER TABLE {old_name} RENAME TO {new_name}")
 
 
 async def _add_column_if_missing(conn, table, column, col_type):
