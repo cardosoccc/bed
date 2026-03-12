@@ -6,6 +6,7 @@ from bed.commands.utils import resolve_asset_id
 from bed.models.asset import AssetClass, AssetType
 from bed.schemas.asset import AssetCreate, AssetUpdate
 from bed.services import assets as service
+from bed.services import stocks as stocks_service
 
 
 @click.group("asset")
@@ -15,11 +16,15 @@ def asset():
 
 
 @asset.command("list")
-def list_assets():
+@click.option("--update", "-u", is_flag=True, default=False, help="Update stock prices before listing")
+def list_assets(update):
     """List all assets."""
 
     async def _run():
         async with get_session() as db:
+            if update:
+                click.echo("updating stock prices...")
+                await stocks_service.update_prices(db)
             return await service.list_assets(db)
 
     items = run_async(_run())
