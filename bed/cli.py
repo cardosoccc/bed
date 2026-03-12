@@ -4,6 +4,7 @@ import click
 
 from bed.commands.assets import asset
 from bed.commands.rules import rule
+from bed.commands.stocks import stocks
 from bed.commands.db_commands import portfolio
 from bed.commands.credentials import configure_aws, configure_gcp
 from bed.commands.config_store import set_config_value, load_config
@@ -48,6 +49,7 @@ def cli():
 cli.add_command(portfolio)
 cli.add_command(asset)
 cli.add_command(rule)
+cli.add_command(stocks)
 
 
 @cli.group("config")
@@ -87,16 +89,19 @@ for _grp in (asset, rule):
 
 _add_subcommand_aliases(config, {"s": "set"})
 _add_subcommand_aliases(portfolio, {"s": "status"})
+_add_subcommand_aliases(stocks, {"l": "list", "u": "update", "a": "add", "r": "remove"})
 
 # Command group aliases — single letter
 _add_visible_alias(cli, asset, "a", "asset")
 _add_visible_alias(cli, rule, "r", "rule")
+_add_visible_alias(cli, stocks, "s", "stocks")
 _add_visible_alias(cli, portfolio, "p", "portfolio")
 _add_visible_alias(cli, cli.commands["config"], "c", "config")
 
 # Double-letter list shortcuts
 cli.add_command(_list_alias(asset.commands["list"], "a list", "assets"), name="aa")
 cli.add_command(_list_alias(rule.commands["list"], "r list", "rules"), name="rr")
+cli.add_command(_list_alias(stocks.commands["list"], "s list", "tickers"), name="ss")
 cli.add_command(_list_alias(portfolio.commands["status"], "p status", "portfolio status"), name="pp")
 
 
