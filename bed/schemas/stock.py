@@ -1,12 +1,12 @@
 from pydantic import BaseModel, ConfigDict
 
 
-class TickerCreate(BaseModel):
+class StockCreate(BaseModel):
     ticker: str
     price: float = 0
 
 
-class TickerRead(BaseModel):
+class StockRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     ticker: str

@@ -2,28 +2,28 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bed.models.asset import Asset, AssetType
-from bed.models.ticker import Ticker
+from bed.models.stock import Stock
 
 
-async def list_tickers(db: AsyncSession) -> list[Ticker]:
-    result = await db.execute(select(Ticker).order_by(Ticker.ticker))
+async def list_stocks(db: AsyncSession) -> list[Stock]:
+    result = await db.execute(select(Stock).order_by(Stock.ticker))
     return list(result.scalars().all())
 
 
-async def get_ticker(db: AsyncSession, ticker: str) -> Ticker | None:
-    return await db.get(Ticker, ticker)
+async def get_stock(db: AsyncSession, ticker: str) -> Stock | None:
+    return await db.get(Stock, ticker)
 
 
-async def add_ticker(db: AsyncSession, ticker: str) -> Ticker:
-    obj = Ticker(ticker=ticker, price=0)
+async def add_stock(db: AsyncSession, ticker: str) -> Stock:
+    obj = Stock(ticker=ticker, price=0)
     db.add(obj)
     await db.commit()
     await db.refresh(obj)
     return obj
 
 
-async def remove_ticker(db: AsyncSession, ticker: str) -> bool:
-    obj = await db.get(Ticker, ticker)
+async def remove_stock(db: AsyncSession, ticker: str) -> bool:
+    obj = await db.get(Stock, ticker)
     if not obj:
         return False
     await db.delete(obj)
@@ -71,13 +71,13 @@ def fetch_prices(tickers: list[str]) -> dict[str, float | None]:
 
 
 async def update_prices(db: AsyncSession) -> dict[str, float | None]:
-    """Update prices for all tickers of interest and stock asset current values."""
-    # Gather all tickers: from ticker table + from stock assets
-    tickers_of_interest = await list_tickers(db)
+    """Update prices for all tracked stocks and stock asset current values."""
+    # Gather all tickers: from stocks table + from stock assets
+    tracked_stocks = await list_stocks(db)
     stock_assets = await get_stock_assets(db)
 
     all_tickers: set[str] = set()
-    for t in tickers_of_interest:
+    for t in tracked_stocks:
         all_tickers.add(t.ticker)
     for a in stock_assets:
         all_tickers.add(a.name)
@@ -87,16 +87,16 @@ async def update_prices(db: AsyncSession) -> dict[str, float | None]:
 
     prices = fetch_prices(sorted(all_tickers))
 
-    # Update ticker table
-    for t in tickers_of_interest:
+    # Update stocks table
+    for t in tracked_stocks:
         if prices.get(t.ticker) is not None:
             t.price = prices[t.ticker]
 
-    # Ensure stock asset tickers exist in ticker table
+    # Ensure stock asset tickers exist in stocks table
     for a in stock_assets:
-        existing = await db.get(Ticker, a.name)
+        existing = await db.get(Stock, a.name)
         if not existing and prices.get(a.name) is not None:
-            db.add(Ticker(ticker=a.name, price=prices[a.name]))
+            db.add(Stock(ticker=a.name, price=prices[a.name]))
 
     # Update stock asset current_value = quantity * price
     for a in stock_assets:
