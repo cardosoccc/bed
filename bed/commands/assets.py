@@ -6,6 +6,7 @@ from bed.commands.utils import resolve_asset_id
 from bed.models.asset import AssetClass, AssetType
 from bed.schemas.asset import AssetCreate, AssetUpdate
 from bed.services import assets as service
+from bed.services import bonds as bonds_service
 from bed.services import stocks as stocks_service
 
 
@@ -16,7 +17,7 @@ def asset():
 
 
 @asset.command("list")
-@click.option("--update", "-u", is_flag=True, default=False, help="Update stock prices before listing")
+@click.option("--update", "-u", is_flag=True, default=False, help="Update stock and bond prices before listing")
 @click.option("--category", is_flag=True, default=False, help="Show category column")
 @click.option("--subcat", is_flag=True, default=False, help="Show subcategory column")
 def list_assets(update, category, subcat):
@@ -27,6 +28,8 @@ def list_assets(update, category, subcat):
             if update:
                 click.echo("updating stock prices...")
                 await stocks_service.update_prices(db)
+                click.echo("updating bond prices...")
+                await bonds_service.update_prices(db)
             return await service.list_assets(db)
 
     items = run_async(_run())

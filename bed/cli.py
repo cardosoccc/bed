@@ -3,6 +3,7 @@ import copy
 import click
 
 from bed.commands.assets import asset
+from bed.commands.bonds import bonds
 from bed.commands.rules import rule
 from bed.commands.stocks import stocks
 from bed.commands.db_commands import portfolio
@@ -48,6 +49,7 @@ def cli():
 
 cli.add_command(portfolio)
 cli.add_command(asset)
+cli.add_command(bonds)
 cli.add_command(rule)
 cli.add_command(stocks)
 
@@ -90,9 +92,11 @@ for _grp in (asset, rule):
 _add_subcommand_aliases(config, {"s": "set"})
 _add_subcommand_aliases(portfolio, {"s": "status"})
 _add_subcommand_aliases(stocks, {"l": "list", "u": "update", "a": "add", "r": "remove"})
+_add_subcommand_aliases(bonds, {"l": "list", "u": "update", "a": "add", "r": "remove", "s": "search"})
 
 # Command group aliases — single letter
 _add_visible_alias(cli, asset, "a", "asset")
+_add_visible_alias(cli, bonds, "b", "bonds")
 _add_visible_alias(cli, rule, "r", "rule")
 _add_visible_alias(cli, stocks, "s", "stocks")
 _add_visible_alias(cli, portfolio, "p", "portfolio")
@@ -101,6 +105,7 @@ _add_visible_alias(cli, cli.commands["config"], "c", "config")
 # Double-letter list shortcuts
 cli.add_command(_list_alias(asset.commands["list"], "a list", "assets"), name="aa")
 cli.add_command(_list_alias(rule.commands["list"], "r list", "rules"), name="rr")
+cli.add_command(_list_alias(bonds.commands["list"], "b list", "bonds"), name="bb")
 cli.add_command(_list_alias(stocks.commands["list"], "s list", "stocks"), name="ss")
 cli.add_command(_list_alias(portfolio.commands["status"], "p status", "portfolio status"), name="pp")
 
