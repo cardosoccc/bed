@@ -7,9 +7,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from bed.models.asset import Asset, AssetType
 from bed.models.bond import Bond
 
-TESOURO_DIRETO_URL = (
-    "https://www.tesourodireto.com.br/json/br/com/b3/tesourodireto/service/api/treasurybondsinfo.json"
-)
+TESOURO_DIRETO_URLS = [
+    "https://www.tesourodireto.com.br/json/br/com/b3/tesourodireto/service/api/treasurybondsinfo.json",
+    "https://api.radaropcoes.com/bonds.json",
+]
 
 
 def _normalize(name: str) -> str:
@@ -50,20 +51,19 @@ async def get_bond_assets(db: AsyncSession) -> list[Asset]:
     return list(result.scalars().all())
 
 
-def fetch_prices() -> dict[str, float | None]:
-    """Fetch current prices for Tesouro Direto bonds from the official API.
-
-    Returns a dict mapping lowercased bond name -> unit redemption value (marcação a mercado).
-    """
-    prices: dict[str, float | None] = {}
-
-    req = urllib.request.Request(TESOURO_DIRETO_URL, headers={"User-Agent": "bed-cli/0.1"})
+def _fetch_json(url: str) -> dict | None:
+    """Fetch JSON from a URL, returning None on failure."""
+    req = urllib.request.Request(url, headers={"User-Agent": "bed-cli/0.1"})
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
-            data = json.loads(resp.read().decode())
+            return json.loads(resp.read().decode())
     except Exception:
-        return prices
+        return None
 
+
+def _parse_prices(data: dict) -> dict[str, float | None]:
+    """Parse bond prices from Tesouro Direto API response."""
+    prices: dict[str, float | None] = {}
     bond_list = data.get("response", {}).get("TrsrBdTradgList", [])
     for item in bond_list:
         bd = item.get("TrsrBd", {})
@@ -71,8 +71,22 @@ def fetch_prices() -> dict[str, float | None]:
         red_val = bd.get("untrRedVal")
         if name and red_val is not None:
             prices[name.lower()] = round(float(red_val), 2)
-
     return prices
+
+
+def fetch_prices() -> dict[str, float | None]:
+    """Fetch current prices for Tesouro Direto bonds.
+
+    Tries multiple API endpoints, falling back to the next on failure.
+    Returns a dict mapping lowercased bond name -> unit redemption value (marcação a mercado).
+    """
+    for url in TESOURO_DIRETO_URLS:
+        data = _fetch_json(url)
+        if data is not None:
+            prices = _parse_prices(data)
+            if prices:
+                return prices
+    return {}
 
 
 def search_bonds(query: str, available: dict[str, float | None]) -> list[tuple[str, float | None]]:

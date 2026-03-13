@@ -122,6 +122,38 @@ class TestFetchPrices:
         prices = service.fetch_prices()
         assert prices == {}
 
+    def test_falls_back_to_next_url(self, monkeypatch):
+        """When the first URL fails, the second URL should be tried."""
+        sample_response = {
+            "response": {
+                "TrsrBdTradgList": [
+                    {"TrsrBd": {"nm": "Tesouro Selic 2029", "untrRedVal": 15000.0}},
+                ]
+            }
+        }
+
+        import json
+        from unittest.mock import MagicMock
+
+        call_count = 0
+
+        def mock_urlopen(req, timeout=None):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                raise Exception("first URL down")
+            mock_resp = MagicMock()
+            mock_resp.read.return_value = json.dumps(sample_response).encode()
+            mock_resp.__enter__ = lambda s: s
+            mock_resp.__exit__ = MagicMock(return_value=False)
+            return mock_resp
+
+        monkeypatch.setattr("urllib.request.urlopen", mock_urlopen)
+
+        prices = service.fetch_prices()
+        assert call_count == 2
+        assert prices["tesouro selic 2029"] == 15000.0
+
 
 class TestSearchBonds:
     def test_partial_match(self):
