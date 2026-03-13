@@ -74,51 +74,100 @@ class TestGetBondAssets:
         assert result[0].name == "tesouro selic 2029"
 
 
+class TestParseJsonApi:
+    def test_parses_valid_response(self):
+        import json
+        sample = {
+            "response": {
+                "TrsrBdTradgList": [
+                    {"TrsrBd": {"nm": "Tesouro Selic 2029", "untrRedVal": 15432.10}},
+                    {"TrsrBd": {"nm": "Tesouro IPCA+ 2035", "untrRedVal": 3210.50}},
+                ]
+            }
+        }
+        raw = json.dumps(sample).encode()
+        prices = service._parse_json_api(raw)
+        assert prices["tesouro selic 2029"] == 15432.10
+        assert prices["tesouro ipca+ 2035"] == 3210.50
+
+    def test_returns_empty_on_invalid_json(self):
+        prices = service._parse_json_api(b"not json")
+        assert prices == {}
+
+    def test_returns_empty_on_missing_structure(self):
+        import json
+        raw = json.dumps({"response": {}}).encode()
+        prices = service._parse_json_api(raw)
+        assert prices == {}
+
+
+class TestParseCsvResgatar:
+    def test_parses_semicolon_csv(self):
+        csv_data = (
+            "Título;Vencimento;Taxa(%);Preço Unitário\n"
+            "Tesouro Selic 2029;01/03/2029;0,0580;15.432,10\n"
+            "Tesouro IPCA+ 2035;15/05/2035;6,20;3.210,50\n"
+        ).encode("utf-8-sig")
+        prices = service._parse_csv_resgatar(csv_data)
+        assert prices["tesouro selic 2029"] == 15432.10
+        assert prices["tesouro ipca+ 2035"] == 3210.50
+
+    def test_returns_empty_on_empty_data(self):
+        prices = service._parse_csv_resgatar(b"")
+        assert prices == {}
+
+
 class TestFetchPrices:
-    def test_returns_dict(self, monkeypatch):
+    def test_returns_dict_from_json_api(self, monkeypatch):
+        import json
+
         sample_response = {
             "response": {
                 "TrsrBdTradgList": [
-                    {
-                        "TrsrBd": {
-                            "nm": "Tesouro Selic 2029",
-                            "untrRedVal": 15432.10,
-                        }
-                    },
-                    {
-                        "TrsrBd": {
-                            "nm": "Tesouro IPCA+ 2035",
-                            "untrRedVal": 3210.50,
-                        }
-                    },
+                    {"TrsrBd": {"nm": "Tesouro Selic 2029", "untrRedVal": 15432.10}},
+                    {"TrsrBd": {"nm": "Tesouro IPCA+ 2035", "untrRedVal": 3210.50}},
                 ]
             }
         }
 
-        import json
-        from unittest.mock import MagicMock
+        def mock_fetch_url(url, timeout=30):
+            if "treasurybondsinfo.json" in url:
+                return json.dumps(sample_response).encode()
+            return None
 
-        mock_resp = MagicMock()
-        mock_resp.read.return_value = json.dumps(sample_response).encode()
-        mock_resp.__enter__ = lambda s: s
-        mock_resp.__exit__ = MagicMock(return_value=False)
-
-        def mock_urlopen(req, timeout=None):
-            return mock_resp
-
-        monkeypatch.setattr("urllib.request.urlopen", mock_urlopen)
+        monkeypatch.setattr(service, "_fetch_url", mock_fetch_url)
 
         prices = service.fetch_prices()
         assert "tesouro selic 2029" in prices
         assert prices["tesouro selic 2029"] == 15432.10
         assert prices["tesouro ipca+ 2035"] == 3210.50
 
-    def test_returns_empty_on_failure(self, monkeypatch):
-        def mock_urlopen(req, timeout=None):
-            raise Exception("network error")
+    def test_falls_back_to_csv(self, monkeypatch):
+        csv_data = (
+            "Título;Vencimento;Taxa(%);Preço Unitário\n"
+            "Tesouro Selic 2029;01/03/2029;0,0580;15.432,10\n"
+        ).encode("utf-8-sig")
 
-        monkeypatch.setattr("urllib.request.urlopen", mock_urlopen)
+        call_count = {"json": 0, "csv": 0}
 
+        def mock_fetch_url(url, timeout=30):
+            if "treasurybondsinfo.json" in url:
+                call_count["json"] += 1
+                return None  # JSON API fails
+            if "rendimento-resgatar" in url:
+                call_count["csv"] += 1
+                return csv_data
+            return None
+
+        monkeypatch.setattr(service, "_fetch_url", mock_fetch_url)
+
+        prices = service.fetch_prices()
+        assert call_count["json"] == 1
+        assert call_count["csv"] == 1
+        assert prices["tesouro selic 2029"] == 15432.10
+
+    def test_returns_empty_on_all_failures(self, monkeypatch):
+        monkeypatch.setattr(service, "_fetch_url", lambda url, timeout=30: None)
         prices = service.fetch_prices()
         assert prices == {}
 
