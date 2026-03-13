@@ -12,6 +12,11 @@ TESOURO_DIRETO_URL = (
 )
 
 
+def _normalize(name: str) -> str:
+    """Normalize a bond name for comparison (collapse hyphens/spaces, strip '+')."""
+    return " ".join(name.lower().replace("-", " ").replace("+", "").split())
+
+
 async def list_bonds(db: AsyncSession) -> list[Bond]:
     result = await db.execute(select(Bond).order_by(Bond.name))
     return list(result.scalars().all())
@@ -94,9 +99,15 @@ async def update_prices(db: AsyncSession) -> dict[str, float | None]:
     if not api_prices:
         return {name: None for name in all_names}
 
+    # Build a normalized lookup: normalized_name -> price
+    norm_lookup: dict[str, float] = {}
+    for api_name, price in api_prices.items():
+        norm_lookup[_normalize(api_name)] = price
+
     prices: dict[str, float | None] = {}
     for name in all_names:
-        prices[name] = api_prices.get(name)
+        exact = api_prices.get(name)
+        prices[name] = exact if exact is not None else norm_lookup.get(_normalize(name))
 
     # Update bonds table
     for b in tracked_bonds:
