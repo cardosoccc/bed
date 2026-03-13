@@ -171,6 +171,24 @@ class TestUpdatePrices:
         assets = await service.get_bond_assets(db_session)
         assert float(assets[0].current_value) == 6400.0
 
+    async def test_matches_hyphenated_names(self, db_session, monkeypatch):
+        """Bond names stored with hyphens should match API names with spaces."""
+        db_session.add(Bond(name="tesouro-selic-2029", price=0))
+        db_session.add(Bond(name="tesouro-ipca-2035", price=0))
+        await db_session.commit()
+
+        monkeypatch.setattr(
+            service, "fetch_prices",
+            lambda: {"tesouro selic 2029": 15000.0, "tesouro ipca+ 2035": 3200.0},
+        )
+
+        prices = await service.update_prices(db_session)
+        assert prices["tesouro-selic-2029"] == 15000.0
+        assert prices["tesouro-ipca-2035"] == 3200.0
+
+        bond = await service.get_bond(db_session, "tesouro-selic-2029")
+        assert bond.price == 15000.0
+
     async def test_empty(self, db_session, monkeypatch):
         monkeypatch.setattr(service, "fetch_prices", lambda: {})
         prices = await service.update_prices(db_session)
