@@ -14,8 +14,9 @@ async def resolve_asset_id(db: AsyncSession, identifier: str) -> uuid.UUID | Non
 
     try:
         idx = int(identifier)
-        result = await db.execute(select(Asset).order_by(Asset.name))
-        assets = list(result.scalars().all())
+        from bed.services.assets import list_assets
+
+        assets = await list_assets(db)
         if 1 <= idx <= len(assets):
             return assets[idx - 1].id
         return None

@@ -8,8 +8,10 @@ from bed.schemas.asset import AssetCreate, AssetUpdate
 
 
 async def list_assets(db: AsyncSession) -> list[Asset]:
-    result = await db.execute(select(Asset).order_by(Asset.name))
-    return list(result.scalars().all())
+    result = await db.execute(select(Asset))
+    assets = list(result.scalars().all())
+    assets.sort(key=lambda a: (a.asset_class.value, sorted(a.tags or []), a.created_at))
+    return assets
 
 
 async def get_asset(db: AsyncSession, asset_id: uuid.UUID) -> Asset | None:
