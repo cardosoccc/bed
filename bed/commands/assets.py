@@ -39,6 +39,11 @@ def list_assets(update, category, subcat):
 
     table = []
     for i, a in enumerate(items, 1):
+        if a.initial_value and a.initial_value != 0:
+            pl_pct = ((a.current_value - a.initial_value) / a.initial_value) * 100
+            pl_str = f"{pl_pct:+.2f}%"
+        else:
+            pl_str = ""
         row = [
             i,
             a.name,
@@ -47,6 +52,7 @@ def list_assets(update, category, subcat):
             f"{a.quantity:.4f}",
             f"{a.initial_value:.2f}",
             f"{a.current_value:.2f}",
+            pl_str,
         ]
         if category:
             row.append(a.category or "")
@@ -55,8 +61,8 @@ def list_assets(update, category, subcat):
         row.append(", ".join(a.tags) if a.tags else "")
         table.append(row)
 
-    headers = ["#", "name", "class", "type", "qty", "initial", "current"]
-    colalign = ["right", "left", "left", "left", "right", "right", "right"]
+    headers = ["#", "name", "class", "type", "qty", "initial", "current", "p/l %"]
+    colalign = ["right", "left", "left", "left", "right", "right", "right", "right"]
     if category:
         headers.append("category")
         colalign.append("left")

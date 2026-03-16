@@ -153,10 +153,15 @@ def portfolio_status():
     click.echo(separator)
     click.echo("Assets")
     click.echo(separator)
-    asset_headers = ["#", "name", "class", "type", "qty", "initial", "current", "category", "subcat", "tags"]
-    asset_colalign = ("right", "left", "left", "left", "right", "right", "right", "left", "left", "left")
+    asset_headers = ["#", "name", "class", "type", "qty", "initial", "current", "p/l %", "category", "subcat", "tags"]
+    asset_colalign = ("right", "left", "left", "left", "right", "right", "right", "right", "left", "left", "left")
     rows = []
     for i, a in enumerate(status.assets, 1):
+        if a.initial_value and a.initial_value != 0:
+            pl_pct = ((a.current_value - a.initial_value) / a.initial_value) * 100
+            pl_str = f"{pl_pct:+.2f}%"
+        else:
+            pl_str = ""
         rows.append([
             i,
             a.name,
@@ -165,10 +170,16 @@ def portfolio_status():
             f"{a.quantity:.4f}",
             f"{a.initial_value:.2f}",
             f"{a.current_value:.2f}",
+            pl_str,
             a.category or "",
             a.subcategory or "",
             ", ".join(a.tags) if a.tags else "",
         ])
+    if status.total_initial and status.total_initial != 0:
+        total_pl_pct = ((status.total_current - status.total_initial) / status.total_initial) * 100
+        total_pl_str = f"{total_pl_pct:+.2f}%"
+    else:
+        total_pl_str = ""
     rows.append([
         "",
         "TOTAL",
@@ -177,6 +188,7 @@ def portfolio_status():
         "",
         f"{status.total_initial:.2f}",
         f"{status.total_current:.2f}",
+        total_pl_str,
         "",
         "",
         "",
