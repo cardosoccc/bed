@@ -47,6 +47,8 @@ Follows the same design principles as [bud](https://github.com/cardosoccc/bud) (
 | id              | UUID              | unique identifier (auto-generated)              |
 | description     | string            | rule description                                |
 | proportion      | numeric (5,2)     | target portfolio proportion (0-1, e.g. 0.66 = 66%) |
+| min_proportion  | numeric (5,2)     | minimum acceptable proportion (0-1, optional)   |
+| max_proportion  | numeric (5,2)     | maximum acceptable proportion (0-1, optional)   |
 | invested_value  | numeric (18,2)    | limit on invested value (optional)              |
 | current_value   | numeric (18,2)    | limit on current value (optional)               |
 | asset_class     | string (optional) | filter by asset class                           |
@@ -55,6 +57,15 @@ Follows the same design principles as [bud](https://github.com/cardosoccc/bud) (
 | subcategory     | string (optional) | filter by subcategory                           |
 | tags            | list of strings   | filter by tags                                  |
 | created_at      | datetime          | creation timestamp                              |
+
+#### portfolio diff calculation
+
+when showing portfolio status, the diff for each class/tag is calculated as follows:
+
+1. **target only** (proportion set, no min/max): `diff = actual - target`. positive means over-allocated, negative means under-allocated.
+2. **min and max** (band defined): if actual is within the `[min, max]` band, `diff = 0`. if below min, `diff = actual - min` (negative). if above max, `diff = actual - max` (positive).
+3. **min only**: `diff = 0` when above min; `diff = actual - min` when below.
+4. **max only**: `diff = 0` when below max; `diff = actual - max` when above.
 
 ## commands
 
@@ -153,6 +164,7 @@ bed a d AAPL             # delete asset
 
 bed r l                  # list rules
 bed r c --description "equity target" --class equity --proportion 0.60
+bed r c --description "equity band" --class equity -p 0.60 --min-proportion 0.50 --max-proportion 0.70
 
 bed p s                  # portfolio status
 bed pp                   # same as above
@@ -272,6 +284,9 @@ bed asset create -n VGLT --class fixed-income --type etf -q 50 -i 3000 -c 3200 -
 # add rules
 bed rule create --description "equity allocation" --class equity --proportion 0.60
 bed rule create --description "fixed-income allocation" --class fixed-income --proportion 0.40
+
+# add rules with min/max band (diff = 0 when within band)
+bed rule create --description "equity band" --class equity -p 0.60 --min-proportion 0.50 --max-proportion 0.70
 
 # view portfolio status
 bed portfolio status

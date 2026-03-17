@@ -104,6 +104,62 @@ async def test_update_rule_proportion(db_session):
 
 
 @pytest.mark.asyncio
+async def test_create_rule_with_min_max_proportion(db_session):
+    data = RuleCreate(
+        description="equity band",
+        proportion=0.60,
+        min_proportion=0.50,
+        max_proportion=0.70,
+        asset_class="equity",
+    )
+    rule = await service.create_rule(db_session, data)
+    assert float(rule.proportion) == 0.60
+    assert float(rule.min_proportion) == 0.50
+    assert float(rule.max_proportion) == 0.70
+
+
+@pytest.mark.asyncio
+async def test_update_rule_min_max_proportion(db_session):
+    created = await service.create_rule(db_session, RuleCreate(
+        description="Band Rule", proportion=0.50,
+        min_proportion=0.40, max_proportion=0.60,
+    ))
+    updated = await service.update_rule(db_session, created.id, RuleUpdate(
+        min_proportion=0.35, max_proportion=0.65,
+    ))
+    assert updated is not None
+    assert float(updated.min_proportion) == 0.35
+    assert float(updated.max_proportion) == 0.65
+    assert float(updated.proportion) == 0.50
+
+
+@pytest.mark.asyncio
+async def test_create_rule_with_min_only(db_session):
+    data = RuleCreate(
+        description="min only",
+        proportion=0.50,
+        min_proportion=0.40,
+        asset_class="equity",
+    )
+    rule = await service.create_rule(db_session, data)
+    assert float(rule.min_proportion) == 0.40
+    assert rule.max_proportion is None
+
+
+@pytest.mark.asyncio
+async def test_create_rule_with_max_only(db_session):
+    data = RuleCreate(
+        description="max only",
+        proportion=0.50,
+        max_proportion=0.60,
+        asset_class="equity",
+    )
+    rule = await service.create_rule(db_session, data)
+    assert rule.min_proportion is None
+    assert float(rule.max_proportion) == 0.60
+
+
+@pytest.mark.asyncio
 async def test_create_rule_with_tags(db_session):
     data = RuleCreate(
         description="Tag Rule",

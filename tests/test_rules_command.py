@@ -111,6 +111,26 @@ class TestRuleCommands:
             assert result.exit_code == 0
             assert "30.00%" in result.output
 
+    def test_create_with_min_max_proportion(self, runner_env):
+        runner, session = runner_env
+        with patch("bed.commands.rules.get_session", session):
+            result = runner.invoke(cli, [
+                "rule", "create",
+                "-d", "equity band",
+                "-p", "0.60",
+                "--min-proportion", "0.50",
+                "--max-proportion", "0.70",
+                "--class", "equity",
+            ])
+            assert result.exit_code == 0
+            assert "created" in result.output
+
+            result = runner.invoke(cli, ["rule", "list"])
+            assert result.exit_code == 0
+            assert "60.00%" in result.output
+            assert "50.00%" in result.output
+            assert "70.00%" in result.output
+
     def test_create_with_tags(self, runner_env):
         runner, session = runner_env
         with patch("bed.commands.rules.get_session", session):

@@ -91,6 +91,9 @@ bed a d AAPL
 # criar regra de alocação por classe
 bed r c --description "equity allocation" --class equity --proportion 0.60
 
+# criar regra com banda min/max (diff=0 quando dentro da banda)
+bed r c --description "equity band" --class equity -p 0.60 --min-proportion 0.50 --max-proportion 0.70
+
 # criar regra com filtro por categoria
 bed r c --description "bonds target" --category bonds --proportion 0.30
 
@@ -106,6 +109,15 @@ bed r e 1 --proportion 0.65
 # excluir regra
 bed r d 2
 ```
+
+### cálculo do diff no portfólio
+
+ao exibir o status do portfólio, o diff de cada classe/tag é calculado:
+
+1. **somente target** (proportion definido, sem min/max): `diff = atual - target`
+2. **min e max** (banda definida): se atual está dentro da banda `[min, max]`, `diff = 0`. abaixo do min: `diff = atual - min`. acima do max: `diff = atual - max`.
+3. **somente min**: `diff = 0` quando acima do min; `diff = atual - min` quando abaixo.
+4. **somente max**: `diff = 0` quando abaixo do max; `diff = atual - max` quando acima.
 
 ## visualizando status do portfólio
 

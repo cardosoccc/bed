@@ -43,6 +43,8 @@ async def migrate():
     """Add columns that may be missing from older databases."""
     async with engine.begin() as conn:
         await _add_column_if_missing(conn, "rules", "proportion", "NUMERIC(5, 2)")
+        await _add_column_if_missing(conn, "rules", "min_proportion", "NUMERIC(5, 2)")
+        await _add_column_if_missing(conn, "rules", "max_proportion", "NUMERIC(5, 2)")
         await _rename_table_if_exists(conn, "tickers", "stocks")
 
 

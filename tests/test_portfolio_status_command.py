@@ -46,10 +46,15 @@ def _create_asset(runner, cli, name, asset_class, asset_type, initial, current,
     return runner.invoke(cli, args)
 
 
-def _create_rule(runner, cli, description, proportion=None, asset_class=None, tags=None):
+def _create_rule(runner, cli, description, proportion=None, asset_class=None, tags=None,
+                 min_proportion=None, max_proportion=None):
     args = ["rule", "create", "-d", description]
     if proportion is not None:
         args.extend(["-p", str(proportion)])
+    if min_proportion is not None:
+        args.extend(["--min-proportion", str(min_proportion)])
+    if max_proportion is not None:
+        args.extend(["--max-proportion", str(max_proportion)])
     if asset_class:
         args.extend(["--class", asset_class])
     if tags:
@@ -168,6 +173,44 @@ class TestPortfolioStatus:
             # growth: total=6000, target=10000*50%=5000, diff=1000
             assert "5000.00" in result.output
             assert "1000.00" in result.output
+
+    def test_status_with_min_max_within_band(self, runner_env):
+        runner, session = runner_env
+        with (
+            patch("bed.commands.db_commands.get_session", session),
+            patch("bed.commands.assets.get_session", session),
+            patch("bed.commands.rules.get_session", session),
+        ):
+            _create_asset(runner, cli, "Stock1", "equity", "stock", 7000, 6000)
+            _create_asset(runner, cli, "Bond1", "fixed-income", "bond", 3000, 4000)
+
+            _create_rule(runner, cli, "equity band", proportion=0.60,
+                         min_proportion=0.50, max_proportion=0.70,
+                         asset_class="equity")
+
+            result = runner.invoke(cli, ["portfolio", "status"])
+            assert result.exit_code == 0
+            # equity total=6000, min=5000, max=7000 → within band → diff=0
+            assert "0.00" in result.output
+
+    def test_status_with_min_max_below_band(self, runner_env):
+        runner, session = runner_env
+        with (
+            patch("bed.commands.db_commands.get_session", session),
+            patch("bed.commands.assets.get_session", session),
+            patch("bed.commands.rules.get_session", session),
+        ):
+            _create_asset(runner, cli, "Stock1", "equity", "stock", 4000, 4000)
+            _create_asset(runner, cli, "Bond1", "fixed-income", "bond", 6000, 6000)
+
+            _create_rule(runner, cli, "equity band", proportion=0.60,
+                         min_proportion=0.50, max_proportion=0.70,
+                         asset_class="equity")
+
+            result = runner.invoke(cli, ["portfolio", "status"])
+            assert result.exit_code == 0
+            # equity total=4000, min=5000 → diff = 4000-5000 = -1000
+            assert "-1000.00" in result.output
 
     def test_status_no_tags(self, runner_env):
         runner, session = runner_env

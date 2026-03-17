@@ -39,6 +39,56 @@ class PortfolioStatus:
     tags: list[TagRow] = field(default_factory=list)
 
 
+def _compute_diff(total: float, pct: float, total_current: float, rule: Rule | None):
+    """Compute target, target_pct, and diff for a given total against a rule.
+
+    Logic:
+    - No rule: target = total, diff = 0
+    - Rule with current_value (absolute target): diff = total - current_value
+    - Rule with proportion (target proportion):
+      - If min/max proportions are set, diff is relative to the band:
+        - Within band → diff = 0
+        - Below min → diff = total - min_value
+        - Above max → diff = total - max_value
+      - Otherwise diff = total - target
+    """
+    if rule is None:
+        return total, pct, 0.0
+
+    if rule.current_value is not None:
+        target = float(rule.current_value)
+        target_pct = (target / total_current * 100) if total_current else 0.0
+        diff = total - target
+        return target, target_pct, diff
+
+    proportion = float(rule.proportion) if rule.proportion is not None else 0.0
+    target_pct = proportion * 100
+    target = total_current * proportion if proportion else 0.0
+
+    min_prop = float(rule.min_proportion) if rule.min_proportion is not None else None
+    max_prop = float(rule.max_proportion) if rule.max_proportion is not None else None
+
+    if min_prop is not None or max_prop is not None:
+        min_val = total_current * min_prop if min_prop is not None else None
+        max_val = total_current * max_prop if max_prop is not None else None
+
+        if min_val is not None and max_val is not None:
+            if total < min_val:
+                diff = total - min_val
+            elif total > max_val:
+                diff = total - max_val
+            else:
+                diff = 0.0
+        elif min_val is not None:
+            diff = total - min_val if total < min_val else 0.0
+        else:
+            diff = total - max_val if total > max_val else 0.0
+    else:
+        diff = total - target
+
+    return target, target_pct, diff
+
+
 async def get_portfolio_status(db: AsyncSession) -> PortfolioStatus:
     assets = await list_assets(db)
     rules = await list_rules(db)
@@ -63,19 +113,7 @@ async def get_portfolio_status(db: AsyncSession) -> PortfolioStatus:
         total = class_totals.get(name, 0.0)
         pct = (total / total_current * 100) if total_current else 0.0
         rule = class_rules.get(name)
-        if rule is None:
-            target = total
-            target_pct = pct
-            diff = 0.0
-        elif rule.current_value is not None:
-            target = float(rule.current_value)
-            target_pct = (target / total_current * 100) if total_current else 0.0
-            diff = total - target
-        else:
-            proportion = float(rule.proportion) if rule.proportion is not None else 0.0
-            target_pct = proportion * 100
-            target = total_current * proportion if proportion else 0.0
-            diff = total - target
+        target, target_pct, diff = _compute_diff(total, pct, total_current, rule)
         class_rows.append(ClassRow(
             name=name, total=total, pct=pct,
             target=target, target_pct=target_pct, diff=diff,
@@ -100,19 +138,7 @@ async def get_portfolio_status(db: AsyncSession) -> PortfolioStatus:
         total = tag_totals.get(name, 0.0)
         pct = (total / total_current * 100) if total_current else 0.0
         rule = tag_rules.get(name)
-        if rule is None:
-            target = total
-            target_pct = pct
-            diff = 0.0
-        elif rule.current_value is not None:
-            target = float(rule.current_value)
-            target_pct = (target / total_current * 100) if total_current else 0.0
-            diff = total - target
-        else:
-            proportion = float(rule.proportion) if rule.proportion is not None else 0.0
-            target_pct = proportion * 100
-            target = total_current * proportion if proportion else 0.0
-            diff = total - target
+        target, target_pct, diff = _compute_diff(total, pct, total_current, rule)
         tag_rows.append(TagRow(
             name=name, total=total, pct=pct,
             target=target, target_pct=target_pct, diff=diff,
