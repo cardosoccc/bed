@@ -6,6 +6,7 @@ from bed.commands.assets import asset
 from bed.commands.bonds import bonds
 from bed.commands.rules import rule
 from bed.commands.stocks import stocks
+from bed.commands.transactions import transaction
 from bed.commands.db_commands import portfolio
 from bed.commands.credentials import configure_aws, configure_gcp
 from bed.commands.config_store import set_config_value, load_config
@@ -52,6 +53,7 @@ cli.add_command(asset)
 cli.add_command(bonds)
 cli.add_command(rule)
 cli.add_command(stocks)
+cli.add_command(transaction)
 
 
 @cli.group("config")
@@ -89,6 +91,8 @@ _crud_aliases = {"e": "edit", "c": "create", "d": "delete", "l": "list"}
 for _grp in (asset, rule):
     _add_subcommand_aliases(_grp, _crud_aliases)
 
+_add_subcommand_aliases(transaction, {"e": "edit", "c": "create", "d": "delete", "l": "list", "i": "import"})
+
 _add_subcommand_aliases(config, {"s": "set"})
 _add_subcommand_aliases(portfolio, {"s": "status"})
 _add_subcommand_aliases(stocks, {"l": "list", "u": "update", "a": "add", "r": "remove"})
@@ -99,6 +103,7 @@ _add_visible_alias(cli, asset, "a", "asset")
 _add_visible_alias(cli, bonds, "b", "bonds")
 _add_visible_alias(cli, rule, "r", "rule")
 _add_visible_alias(cli, stocks, "s", "stocks")
+_add_visible_alias(cli, transaction, "t", "transaction")
 _add_visible_alias(cli, portfolio, "p", "portfolio")
 _add_visible_alias(cli, cli.commands["config"], "c", "config")
 
@@ -108,6 +113,7 @@ cli.add_command(_list_alias(rule.commands["list"], "r list", "rules"), name="rr"
 cli.add_command(_list_alias(bonds.commands["list"], "b list", "bonds"), name="bb")
 cli.add_command(_list_alias(stocks.commands["list"], "s list", "stocks"), name="ss")
 cli.add_command(_list_alias(portfolio.commands["status"], "p status", "portfolio status"), name="pp")
+cli.add_command(_list_alias(transaction.commands["list"], "t list", "transactions"), name="tt")
 
 
 if __name__ == "__main__":
