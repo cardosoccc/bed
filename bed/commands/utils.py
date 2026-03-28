@@ -29,6 +29,28 @@ async def resolve_asset_id(db: AsyncSession, identifier: str) -> uuid.UUID | Non
 
 
 
+async def resolve_transaction_id(db: AsyncSession, identifier: str) -> uuid.UUID | None:
+    from bed.models.transaction import Transaction
+
+    try:
+        return uuid.UUID(identifier)
+    except ValueError:
+        pass
+
+    try:
+        idx = int(identifier)
+        from bed.services.transactions import list_transactions
+
+        txns = await list_transactions(db, limit=None)
+        if 1 <= idx <= len(txns):
+            return txns[idx - 1].id
+        return None
+    except ValueError:
+        pass
+
+    return None
+
+
 async def resolve_rule_id(db: AsyncSession, identifier: str) -> uuid.UUID | None:
     from bed.models.rule import Rule
 
