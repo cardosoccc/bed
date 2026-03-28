@@ -1,7 +1,7 @@
 ---
 title: "feat: Add transactions command with CRUD and XLSX import"
 type: feat
-status: active
+status: completed
 date: 2026-03-28
 ---
 
