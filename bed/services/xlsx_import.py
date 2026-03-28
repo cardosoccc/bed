@@ -18,15 +18,15 @@ NO_TICKER_PREFIXES = ("Tesouro ", "CDB ")
 
 def parse_xlsx(file_path: str, sheet_name: str = "Movimentação") -> list[dict]:
     """Parse B3 movimentação XLSX into a list of raw transaction dicts."""
-    wb = openpyxl.load_workbook(file_path)
+    wb = openpyxl.load_workbook(file_path, read_only=True)
     ws = wb[sheet_name]
 
     rows = []
     for row in ws.iter_rows(min_row=2, values_only=True):
-        if not row or not row[0]:
+        if not row[0]:
             continue
 
-        entrada_saida, data, movimentacao, produto, instituicao, quantidade, preco, valor = row[:8]
+        entrada_saida, data, movimentacao, produto, instituicao, quantidade, preco, valor = row
 
         rows.append({
             "entrada_saida": str(entrada_saida).strip(),
