@@ -7,6 +7,7 @@ from bed.commands.bonds import bonds
 from bed.commands.rules import rule
 from bed.commands.stocks import stocks
 from bed.commands.transactions import transaction
+from bed.commands.conciliate import conciliate_cmd
 from bed.commands.db_commands import portfolio
 from bed.commands.credentials import configure_aws, configure_gcp
 from bed.commands.config_store import set_config_value, load_config
@@ -54,6 +55,7 @@ cli.add_command(bonds)
 cli.add_command(rule)
 cli.add_command(stocks)
 cli.add_command(transaction)
+cli.add_command(conciliate_cmd)
 
 
 @cli.group("config")
