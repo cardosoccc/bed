@@ -104,3 +104,74 @@ class TestApplySign:
 
     def test_already_negative_debito(self):
         assert apply_sign(-50.0, "Debito") == -50.0
+
+
+class TestNormalizeAgfType:
+    def test_jscp_normalized(self):
+        from bed.services.xlsx_import import normalize_agf_type
+        assert normalize_agf_type("Jscp") == "Juros Sobre Capital Próprio"
+
+    def test_rendimento_normalized(self):
+        from bed.services.xlsx_import import normalize_agf_type
+        assert normalize_agf_type("RENDIMENTO") == "Rendimento"
+
+    def test_compra_unchanged(self):
+        from bed.services.xlsx_import import normalize_agf_type
+        assert normalize_agf_type("Compra") == "Compra"
+
+    def test_venda_unchanged(self):
+        from bed.services.xlsx_import import normalize_agf_type
+        assert normalize_agf_type("Venda") == "Venda"
+
+    def test_dividendo_unchanged(self):
+        from bed.services.xlsx_import import normalize_agf_type
+        assert normalize_agf_type("Dividendo") == "Dividendo"
+
+    def test_bonificacao_unchanged(self):
+        from bed.services.xlsx_import import normalize_agf_type
+        assert normalize_agf_type("Bonificação") == "Bonificação"
+
+
+class TestStripFracionarioSuffix:
+    def test_strips_f_suffix(self):
+        from bed.services.xlsx_import import strip_fracionario_suffix
+        assert strip_fracionario_suffix("VALE3F") == "VALE3"
+        assert strip_fracionario_suffix("BBAS3F") == "BBAS3"
+        assert strip_fracionario_suffix("TAEE11F") == "TAEE11"
+
+    def test_no_suffix_unchanged(self):
+        from bed.services.xlsx_import import strip_fracionario_suffix
+        assert strip_fracionario_suffix("VALE3") == "VALE3"
+        assert strip_fracionario_suffix("BBAS3") == "BBAS3"
+
+    def test_non_matching_f_unchanged(self):
+        from bed.services.xlsx_import import strip_fracionario_suffix
+        # "F" not at end of ticker pattern
+        assert strip_fracionario_suffix("FLRY3") == "FLRY3"
+        assert strip_fracionario_suffix("FESA4") == "FESA4"
+
+    def test_option_codes_unchanged(self):
+        from bed.services.xlsx_import import strip_fracionario_suffix
+        assert strip_fracionario_suffix("CSANO660") == "CSANO660"
+        assert strip_fracionario_suffix("VALEJ655") == "VALEJ655"
+
+
+class TestMovTypeWhitelist:
+    def test_whitelist_contains_expected_types(self):
+        from bed.services.xlsx_import import MOV_TYPE_WHITELIST
+        assert "Dividendo" in MOV_TYPE_WHITELIST
+        assert "Juros Sobre Capital Próprio" in MOV_TYPE_WHITELIST
+        assert "Rendimento" in MOV_TYPE_WHITELIST
+        assert "Reembolso" in MOV_TYPE_WHITELIST
+        assert "Compra" in MOV_TYPE_WHITELIST
+        assert "Venda" in MOV_TYPE_WHITELIST
+        assert "COMPRA / VENDA" in MOV_TYPE_WHITELIST
+        assert "VENCIMENTO" in MOV_TYPE_WHITELIST
+
+    def test_whitelist_excludes_lending(self):
+        from bed.services.xlsx_import import MOV_TYPE_WHITELIST
+        assert "Transferência - Liquidação" not in MOV_TYPE_WHITELIST
+        assert "Empréstimo" not in MOV_TYPE_WHITELIST
+        assert "Transferência" not in MOV_TYPE_WHITELIST
+        assert "Dividendo - Transferido" not in MOV_TYPE_WHITELIST
+        assert "Juros Sobre Capital Próprio - Transferido" not in MOV_TYPE_WHITELIST
