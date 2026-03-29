@@ -8,7 +8,12 @@ from bed.commands.utils import resolve_transaction_id
 from bed.schemas.transaction import TransactionCreate, TransactionUpdate
 from bed.services import transactions as service
 from bed.services.transactions import compute_row_hash
-from bed.services.xlsx_import import apply_sign, parse_xlsx
+from bed.services.xlsx_import import (
+    apply_sign,
+    parse_agf_xlsx,
+    parse_mov_xlsx,
+    parse_neg_xlsx,
+)
 
 
 @click.group("transaction", invoke_without_command=True)
@@ -163,16 +168,39 @@ def delete_transaction(identifier):
 
 
 @transaction.command("import")
-@click.argument("file", type=click.Path(exists=True))
-@click.option("--sheet", default="Movimentação", help="Sheet name")
+@click.option("--agf", "agf_file", type=click.Path(exists=True), default=None, help="Import from AGF+ XLSX (buy/sell + proventos)")
+@click.option("--mov", "mov_file", type=click.Path(exists=True), default=None, help="Import from B3 Movimentação XLSX (proventos + treasury/CDB)")
+@click.option("--neg", "neg_file", type=click.Path(exists=True), default=None, help="Import from B3 Negociação XLSX (stock buy/sell)")
+@click.option("--institution", default="inter", help="Institution for AGF import (default: inter)")
 @click.option("--dry-run", is_flag=True, default=False, help="Preview without importing")
-def import_transactions(file, sheet, dry_run):
-    """Import transactions from B3 XLSX export."""
+def import_transactions(agf_file, mov_file, neg_file, institution, dry_run):
+    """Import transactions from XLSX files.
+
+    Use --neg for stock trades + --mov for proventos, OR --agf for everything.
+    Sources are mutually exclusive (specify exactly one per invocation).
+    """
+    sources = [(name, path) for name, path in [("agf", agf_file), ("mov", mov_file), ("neg", neg_file)] if path]
+
+    if len(sources) == 0:
+        click.echo("error: specify one source: --agf, --mov, or --neg.")
+        return
+    if len(sources) > 1:
+        click.echo("error: specify only one source (--agf, --mov, --neg are mutually exclusive).")
+        return
+
+    source_name, file_path = sources[0]
 
     async def _run():
         async with get_session() as db:
-            click.echo(f"parsing {file}...")
-            raw_rows = parse_xlsx(file, sheet_name=sheet)
+            click.echo(f"parsing {file_path} ({source_name})...")
+
+            if source_name == "agf":
+                raw_rows = parse_agf_xlsx(file_path, institution=institution)
+            elif source_name == "mov":
+                raw_rows = parse_mov_xlsx(file_path)
+            else:
+                raw_rows = parse_neg_xlsx(file_path)
+
             click.echo(f"found {len(raw_rows)} rows.")
 
             # Load asset tags for inference
@@ -191,7 +219,11 @@ def import_transactions(file, sheet, dry_run):
             # Build TransactionCreate objects
             items = []
             for row in raw_rows:
-                total = apply_sign(row["total_value"], row["entrada_saida"])
+                if source_name == "mov":
+                    total = apply_sign(row["total_value"], row["entrada_saida"])
+                else:
+                    total = row["total_value"]
+
                 row_tags = ticker_tags.get(row["ticker"], [])
                 row_hash = compute_row_hash(
                     row["date"], row["type"], row["product"],

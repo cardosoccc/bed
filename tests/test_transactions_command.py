@@ -172,3 +172,100 @@ class TestTransactionCommands:
             assert result.exit_code == 0
             assert "VALE3" in result.output
             assert "PETR4" not in result.output
+
+
+@pytest.mark.integration
+class TestImportCommand:
+    def test_no_source_flag_shows_error(self, runner_env):
+        runner, session = runner_env
+        with patch("bed.commands.transactions.get_session", session):
+            result = runner.invoke(cli, ["transaction", "import"])
+            assert result.exit_code != 0 or "specify one" in result.output.lower() or "error" in result.output.lower()
+
+    def test_multiple_source_flags_shows_error(self, runner_env, tmp_path):
+        runner, session = runner_env
+        f = tmp_path / "dummy.xlsx"
+        f.touch()
+        with patch("bed.commands.transactions.get_session", session):
+            result = runner.invoke(cli, [
+                "transaction", "import",
+                "--agf", str(f), "--neg", str(f),
+            ])
+            assert result.exit_code != 0 or "specify one" in result.output.lower() or "mutually exclusive" in result.output.lower()
+
+    def test_import_neg_dry_run(self, runner_env):
+        runner, session = runner_env
+        neg_file = str(Path(__file__).parent.parent / "negociacao-2026-03-29-01-28-10.xlsx")
+        if not Path(neg_file).exists():
+            pytest.skip("negociacao file not available")
+        with patch("bed.commands.transactions.get_session", session):
+            result = runner.invoke(cli, [
+                "transaction", "import", "--neg", neg_file, "--dry-run",
+            ])
+            assert result.exit_code == 0
+            assert "dry-run" in result.output.lower()
+            assert "would import" in result.output.lower()
+
+    def test_import_mov_dry_run(self, runner_env):
+        runner, session = runner_env
+        mov_file = str(Path(__file__).parent.parent / "movimentacao-2026-03-28-16-48-38.xlsx")
+        if not Path(mov_file).exists():
+            pytest.skip("movimentacao file not available")
+        with patch("bed.commands.transactions.get_session", session):
+            result = runner.invoke(cli, [
+                "transaction", "import", "--mov", mov_file, "--dry-run",
+            ])
+            assert result.exit_code == 0
+            assert "dry-run" in result.output.lower()
+            assert "would import" in result.output.lower()
+
+    def test_import_agf_dry_run(self, runner_env):
+        runner, session = runner_env
+        agf_file = str(Path(__file__).parent.parent / "agf.xlsx")
+        if not Path(agf_file).exists():
+            pytest.skip("agf file not available")
+        with patch("bed.commands.transactions.get_session", session):
+            result = runner.invoke(cli, [
+                "transaction", "import", "--agf", agf_file, "--dry-run",
+            ])
+            assert result.exit_code == 0
+            assert "dry-run" in result.output.lower()
+            assert "would import" in result.output.lower()
+
+    def test_import_agf_with_institution(self, runner_env):
+        runner, session = runner_env
+        agf_file = str(Path(__file__).parent.parent / "agf.xlsx")
+        if not Path(agf_file).exists():
+            pytest.skip("agf file not available")
+        with patch("bed.commands.transactions.get_session", session):
+            result = runner.invoke(cli, [
+                "transaction", "import", "--agf", agf_file,
+                "--institution", "btg-pactual", "--dry-run",
+            ])
+            assert result.exit_code == 0
+            assert "dry-run" in result.output.lower()
+
+    def test_import_neg_creates_transactions(self, runner_env):
+        runner, session = runner_env
+        neg_file = str(Path(__file__).parent.parent / "negociacao-2026-03-29-01-28-10.xlsx")
+        if not Path(neg_file).exists():
+            pytest.skip("negociacao file not available")
+        with patch("bed.commands.transactions.get_session", session):
+            result = runner.invoke(cli, [
+                "transaction", "import", "--neg", neg_file,
+            ])
+            assert result.exit_code == 0
+            assert "imported" in result.output
+
+    def test_import_neg_dedup(self, runner_env):
+        runner, session = runner_env
+        neg_file = str(Path(__file__).parent.parent / "negociacao-2026-03-29-01-28-10.xlsx")
+        if not Path(neg_file).exists():
+            pytest.skip("negociacao file not available")
+        with patch("bed.commands.transactions.get_session", session):
+            # First import
+            runner.invoke(cli, ["transaction", "import", "--neg", neg_file])
+            # Second import - all should be skipped
+            result = runner.invoke(cli, ["transaction", "import", "--neg", neg_file])
+            assert result.exit_code == 0
+            assert "0 imported" in result.output
