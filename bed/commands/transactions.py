@@ -13,7 +13,6 @@ from bed.services.xlsx_import import (
     parse_agf_xlsx,
     parse_mov_xlsx,
     parse_neg_xlsx,
-    parse_xlsx,
 )
 
 
