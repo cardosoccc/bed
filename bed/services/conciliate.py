@@ -77,13 +77,16 @@ async def conciliate(db: AsyncSession) -> ConciliationReport:
 
     query = select(Asset).where(Asset.asset_type.in_(EQUITY_TYPES))
     result = await db.execute(query)
-    assets = {a.name: a for a in result.scalars().all()}
+    assets = {a.name.upper(): a for a in result.scalars().all()}
 
     report = ConciliationReport()
+    matched_asset_keys = set()
 
     for ticker, pos in sorted(positions.items()):
-        if ticker in assets:
-            asset = assets[ticker]
+        ticker_upper = ticker.upper()
+        if ticker_upper in assets:
+            matched_asset_keys.add(ticker_upper)
+            asset = assets[ticker_upper]
             asset_qty = float(asset.quantity)
             if abs(pos.quantity - asset_qty) < 0.0001:
                 report.matches.append(ticker)
@@ -100,7 +103,7 @@ async def conciliate(db: AsyncSession) -> ConciliationReport:
             ))
 
     for name, asset in sorted(assets.items()):
-        if name not in positions:
+        if name not in matched_asset_keys:
             report.orphan_assets.append(asset)
 
     return report
