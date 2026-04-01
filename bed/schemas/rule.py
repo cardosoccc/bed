@@ -1,19 +1,30 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
-class RuleCreate(BaseModel):
+class RuleBase(BaseModel):
     description: str
-    proportion: float | None = None
-    invested_value: float | None = None
-    current_value: float | None = None
+    current: bool = True
+    target: float | None = None
+    min: float | None = None
+    max: float | None = None
     asset_class: str | None = None
     asset_type: str | None = None
     category: str | None = None
     subcategory: str | None = None
-    tags: list[str] = []
+    tags: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_target_bounds(self):
+        if self.target is not None and (self.min is not None or self.max is not None):
+            raise ValueError("target cannot be combined with min or max")
+        return self
+
+
+class RuleCreate(RuleBase):
+    pass
 
 
 class RuleRead(BaseModel):
@@ -21,9 +32,10 @@ class RuleRead(BaseModel):
 
     id: uuid.UUID
     description: str
-    proportion: float | None
-    invested_value: float | None
-    current_value: float | None
+    current: bool
+    target: float | None
+    min: float | None
+    max: float | None
     asset_class: str | None
     asset_type: str | None
     category: str | None
@@ -34,11 +46,18 @@ class RuleRead(BaseModel):
 
 class RuleUpdate(BaseModel):
     description: str | None = None
-    proportion: float | None = None
-    invested_value: float | None = None
-    current_value: float | None = None
+    current: bool | None = None
+    target: float | None = None
+    min: float | None = None
+    max: float | None = None
     asset_class: str | None = None
     asset_type: str | None = None
     category: str | None = None
     subcategory: str | None = None
     tags: list[str] | None = None
+
+    @model_validator(mode="after")
+    def validate_target_bounds(self):
+        if self.target is not None and (self.min is not None or self.max is not None):
+            raise ValueError("target cannot be combined with min or max")
+        return self

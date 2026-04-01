@@ -60,17 +60,19 @@ async def test_class_breakdown(db_session):
 async def test_class_with_rules(db_session):
     await asset_service.create_asset(db_session, AssetCreate(
         name="S1", asset_class=AssetClass.equity, asset_type=AssetType.stock,
+        initial_value=7000,
         current_value=8000,
     ))
     await asset_service.create_asset(db_session, AssetCreate(
         name="B1", asset_class=AssetClass.fixed_income, asset_type=AssetType.bond,
+        initial_value=3000,
         current_value=2000,
     ))
     await rule_service.create_rule(db_session, RuleCreate(
-        description="60% equity", proportion=0.60, asset_class="equity",
+        description="60% equity", target=0.60, asset_class="equity",
     ))
     await rule_service.create_rule(db_session, RuleCreate(
-        description="40% bonds", proportion=0.40, asset_class="fixed-income",
+        description="40% bonds", target=0.40, asset_class="fixed-income",
     ))
 
     status = await get_portfolio_status(db_session)
@@ -117,14 +119,16 @@ async def test_tag_breakdown(db_session):
 async def test_tag_with_rules(db_session):
     await asset_service.create_asset(db_session, AssetCreate(
         name="S1", asset_class=AssetClass.equity, asset_type=AssetType.stock,
+        initial_value=5000,
         current_value=6000, tags=["growth"],
     ))
     await asset_service.create_asset(db_session, AssetCreate(
         name="B1", asset_class=AssetClass.fixed_income, asset_type=AssetType.bond,
+        initial_value=4000,
         current_value=4000, tags=["defensive"],
     ))
     await rule_service.create_rule(db_session, RuleCreate(
-        description="50% growth", proportion=0.50, tags=["growth"],
+        description="50% growth", target=0.50, tags=["growth"],
     ))
 
     status = await get_portfolio_status(db_session)
@@ -144,10 +148,11 @@ async def test_class_from_rule_only(db_session):
     """A class appears in breakdown even if no assets have that class, but a rule does."""
     await asset_service.create_asset(db_session, AssetCreate(
         name="S1", asset_class=AssetClass.equity, asset_type=AssetType.stock,
+        initial_value=10000,
         current_value=10000,
     ))
     await rule_service.create_rule(db_session, RuleCreate(
-        description="30% bonds", proportion=0.30, asset_class="fixed-income",
+        description="30% bonds", target=0.30, asset_class="fixed-income",
     ))
 
     status = await get_portfolio_status(db_session)
@@ -155,3 +160,76 @@ async def test_class_from_rule_only(db_session):
     assert fixed.total == 0.0
     assert fixed.target == pytest.approx(3000)
     assert fixed.diff == pytest.approx(-3000)
+
+
+@pytest.mark.asyncio
+async def test_class_with_invested_rule_uses_initial_values(db_session):
+    await asset_service.create_asset(db_session, AssetCreate(
+        name="S1", asset_class=AssetClass.equity, asset_type=AssetType.stock,
+        initial_value=7000, current_value=8000,
+    ))
+    await asset_service.create_asset(db_session, AssetCreate(
+        name="B1", asset_class=AssetClass.fixed_income, asset_type=AssetType.bond,
+        initial_value=3000, current_value=2000,
+    ))
+    await rule_service.create_rule(db_session, RuleCreate(
+        description="50% invested equity",
+        target=0.50,
+        current=False,
+        asset_class="equity",
+    ))
+
+    status = await get_portfolio_status(db_session)
+    equity = next(c for c in status.classes if c.name == "equity")
+
+    assert equity.total == pytest.approx(7000)
+    assert equity.pct == pytest.approx(70.0)
+    assert equity.target == pytest.approx(5000)
+    assert equity.target_pct == pytest.approx(50.0)
+    assert equity.diff == pytest.approx(2000)
+
+
+@pytest.mark.asyncio
+async def test_min_only_rule_diff_is_zero_when_in_range(db_session):
+    await asset_service.create_asset(db_session, AssetCreate(
+        name="S1", asset_class=AssetClass.equity, asset_type=AssetType.stock,
+        initial_value=1000, current_value=6000, tags=["growth"],
+    ))
+    await asset_service.create_asset(db_session, AssetCreate(
+        name="B1", asset_class=AssetClass.fixed_income, asset_type=AssetType.bond,
+        initial_value=1000, current_value=4000, tags=["defensive"],
+    ))
+    await rule_service.create_rule(db_session, RuleCreate(
+        description="Min growth",
+        min=0.50,
+        tags=["growth"],
+    ))
+
+    status = await get_portfolio_status(db_session)
+    growth = next(t for t in status.tags if t.name == "growth")
+
+    assert growth.target == pytest.approx(5000)
+    assert growth.diff == pytest.approx(0.0)
+
+
+@pytest.mark.asyncio
+async def test_max_only_rule_diff_is_positive_when_above_max(db_session):
+    await asset_service.create_asset(db_session, AssetCreate(
+        name="S1", asset_class=AssetClass.equity, asset_type=AssetType.stock,
+        initial_value=1000, current_value=6000, tags=["growth"],
+    ))
+    await asset_service.create_asset(db_session, AssetCreate(
+        name="B1", asset_class=AssetClass.fixed_income, asset_type=AssetType.bond,
+        initial_value=1000, current_value=4000, tags=["defensive"],
+    ))
+    await rule_service.create_rule(db_session, RuleCreate(
+        description="Max growth",
+        max=0.50,
+        tags=["growth"],
+    ))
+
+    status = await get_portfolio_status(db_session)
+    growth = next(t for t in status.tags if t.name == "growth")
+
+    assert growth.target == pytest.approx(5000)
+    assert growth.diff == pytest.approx(1000)

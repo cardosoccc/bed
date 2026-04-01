@@ -1,6 +1,7 @@
 import uuid
 
 import pytest
+from pydantic import ValidationError
 
 from bed.schemas.rule import RuleCreate, RuleUpdate
 from bed.services import rules as service
@@ -10,12 +11,13 @@ from bed.services import rules as service
 async def test_create_rule(db_session):
     data = RuleCreate(
         description="Max 30% equity",
-        current_value=30,
+        target=0.30,
         asset_class="equity",
     )
     rule = await service.create_rule(db_session, data)
     assert rule.description == "Max 30% equity"
-    assert rule.current_value == 30
+    assert float(rule.target) == 0.30
+    assert rule.current is True
     assert rule.asset_class == "equity"
     assert rule.id is not None
 
@@ -32,7 +34,7 @@ async def test_list_rules(db_session):
 @pytest.mark.asyncio
 async def test_get_rule(db_session):
     created = await service.create_rule(db_session, RuleCreate(
-        description="Test Rule", invested_value=50000
+        description="Test Rule", target=50000, current=False
     ))
     fetched = await service.get_rule(db_session, created.id)
     assert fetched is not None
@@ -48,13 +50,13 @@ async def test_get_rule_not_found(db_session):
 @pytest.mark.asyncio
 async def test_update_rule(db_session):
     created = await service.create_rule(db_session, RuleCreate(
-        description="Editable Rule", current_value=20
+        description="Editable Rule", target=20
     ))
     updated = await service.update_rule(db_session, created.id, RuleUpdate(
-        current_value=25, tags=["important"]
+        target=25, tags=["important"]
     ))
     assert updated is not None
-    assert updated.current_value == 25
+    assert float(updated.target) == 25
     assert updated.tags == ["important"]
     assert updated.description == "Editable Rule"
 
@@ -78,29 +80,29 @@ async def test_delete_rule_not_found(db_session):
 
 
 @pytest.mark.asyncio
-async def test_create_rule_with_proportion(db_session):
+async def test_create_rule_with_percentage_target(db_session):
     data = RuleCreate(
         description="30% equity",
-        proportion=0.30,
+        target=0.30,
         asset_class="equity",
     )
     rule = await service.create_rule(db_session, data)
     assert rule.description == "30% equity"
-    assert float(rule.proportion) == 0.30
+    assert float(rule.target) == 0.30
     assert rule.asset_class == "equity"
 
 
 @pytest.mark.asyncio
-async def test_update_rule_proportion(db_session):
+async def test_update_rule_target(db_session):
     created = await service.create_rule(db_session, RuleCreate(
-        description="Proportion Rule", proportion=0.20
+        description="Target Rule", target=0.20
     ))
     updated = await service.update_rule(db_session, created.id, RuleUpdate(
-        proportion=0.35
+        target=0.35
     ))
     assert updated is not None
-    assert float(updated.proportion) == 0.35
-    assert updated.description == "Proportion Rule"
+    assert float(updated.target) == 0.35
+    assert updated.description == "Target Rule"
 
 
 @pytest.mark.asyncio
@@ -111,3 +113,67 @@ async def test_create_rule_with_tags(db_session):
     )
     rule = await service.create_rule(db_session, data)
     assert rule.tags == ["defensive", "conservative"]
+
+
+@pytest.mark.asyncio
+async def test_create_rule_with_absolute_target(db_session):
+    rule = await service.create_rule(db_session, RuleCreate(
+        description="Absolute target",
+        target=5000,
+        asset_class="equity",
+    ))
+    assert float(rule.target) == 5000
+    assert rule.min is None
+    assert rule.max is None
+    assert rule.current is True
+
+
+@pytest.mark.asyncio
+async def test_create_rule_with_min_and_max(db_session):
+    rule = await service.create_rule(db_session, RuleCreate(
+        description="Range rule",
+        min=0.10,
+        max=0.30,
+        asset_class="equity",
+    ))
+    assert float(rule.min) == 0.10
+    assert float(rule.max) == 0.30
+    assert rule.target is None
+
+
+@pytest.mark.asyncio
+async def test_update_rule_from_target_to_range(db_session):
+    created = await service.create_rule(db_session, RuleCreate(
+        description="Switchable Rule",
+        target=0.20,
+    ))
+    updated = await service.update_rule(db_session, created.id, RuleUpdate(
+        target=None,
+        min=0.10,
+        max=0.40,
+    ))
+    assert updated is not None
+    assert updated.target is None
+    assert float(updated.min) == 0.10
+    assert float(updated.max) == 0.40
+
+
+def test_rule_create_rejects_target_and_min():
+    with pytest.raises(ValidationError):
+        RuleCreate(description="Invalid", target=0.20, min=0.10)
+
+
+def test_rule_create_rejects_target_and_max():
+    with pytest.raises(ValidationError):
+        RuleCreate(description="Invalid", target=0.20, max=0.30)
+
+
+@pytest.mark.asyncio
+async def test_create_invested_based_rule(db_session):
+    rule = await service.create_rule(db_session, RuleCreate(
+        description="Invested rule",
+        target=0.15,
+        current=False,
+    ))
+    assert float(rule.target) == 0.15
+    assert rule.current is False

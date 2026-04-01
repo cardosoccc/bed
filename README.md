@@ -18,7 +18,7 @@ Follows the same design principles as [bud](https://github.com/cardosoccc/bud) (
 
 - **portfolio** — the top-level project. there is no separate portfolio table; the database itself represents the portfolio. a portfolio is initialized, destroyed, pushed, or pulled as a unit.
 - **asset** — a specific holding in the portfolio (e.g. a stock, bond, ETF, crypto position). each asset tracks quantity, initial investment value, and current market value. assets can be organized with categories, subcategories, and tags.
-- **rule** — a constraint or target for portfolio allocation. rules define desired proportions, invested value limits, or current value limits. they can be scoped to a specific asset class, asset type, category, subcategory, or set of tags.
+- **rule** — a constraint or target for portfolio allocation. rules define a `target`, `min`, or `max` threshold against either current or invested portfolio value. values between `0` and `1` are interpreted as proportions of the portfolio total for the chosen metric. rules can be scoped to a specific asset class, asset type, category, subcategory, or set of tags.
 - **cloud sync** — portfolios can be pushed to and pulled from remote cloud storage (S3 or GCS) with version tracking to prevent accidental overwrites.
 
 ## domain model
@@ -46,9 +46,10 @@ Follows the same design principles as [bud](https://github.com/cardosoccc/bud) (
 |-----------------|-------------------|-------------------------------------------------|
 | id              | UUID              | unique identifier (auto-generated)              |
 | description     | string            | rule description                                |
-| proportion      | numeric (5,2)     | target portfolio proportion (0-1, e.g. 0.66 = 66%) |
-| invested_value  | numeric (18,2)    | limit on invested value (optional)              |
-| current_value   | numeric (18,2)    | limit on current value (optional)               |
+| current         | boolean           | `true` for current-value rules, `false` for invested-value rules |
+| target          | numeric (18,2)    | exact target for the selected metric (optional) |
+| min             | numeric (18,2)    | lower bound for the selected metric (optional)  |
+| max             | numeric (18,2)    | upper bound for the selected metric (optional)  |
 | asset_class     | string (optional) | filter by asset class                           |
 | asset_type      | string (optional) | filter by asset type                            |
 | category        | string (optional) | filter by category                              |
@@ -152,7 +153,9 @@ bed a e AAPL -c 1800     # update current value
 bed a d AAPL             # delete asset
 
 bed r l                  # list rules
-bed r c --description "equity target" --class equity --proportion 0.60
+bed r c --description "equity target" --class equity --target 0.60
+bed r c --description "bond floor" --class fixed-income --min 0.20
+bed r c --description "invested equity cap" --class equity --target 5000 --invested
 
 bed p s                  # portfolio status
 bed pp                   # same as above
@@ -270,8 +273,8 @@ bed asset create -n AAPL --class equity --type stock -q 10 -i 1500 -c 1700
 bed asset create -n VGLT --class fixed-income --type etf -q 50 -i 3000 -c 3200 -t bonds,long-term
 
 # add rules
-bed rule create --description "equity allocation" --class equity --proportion 0.60
-bed rule create --description "fixed-income allocation" --class fixed-income --proportion 0.40
+bed rule create --description "equity allocation" --class equity --target 0.60
+bed rule create --description "fixed-income allocation" --class fixed-income --target 0.40
 
 # view portfolio status
 bed portfolio status

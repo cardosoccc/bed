@@ -191,12 +191,13 @@ def portfolio_status():
     click.echo(separator)
     click.echo("Classes")
     click.echo(separator)
-    class_headers = ["name", "total", "pct", "target", "target pct", "diff"]
-    class_colalign = ("left", "right", "right", "right", "right", "right")
+    class_headers = ["name", "metric", "total", "pct", "target", "target pct", "diff"]
+    class_colalign = ("left", "left", "right", "right", "right", "right", "right")
     class_rows = []
     for c in status.classes:
         class_rows.append([
             c.name,
+            c.metric,
             f"{c.total:.2f}",
             f"{c.pct:.2f}%",
             f"{c.target:.2f}",
@@ -213,12 +214,13 @@ def portfolio_status():
     click.echo(separator)
     click.echo("Tags")
     click.echo(separator)
-    tag_headers = ["name", "total", "pct", "target", "target pct", "diff"]
-    tag_colalign = ("left", "right", "right", "right", "right", "right")
+    tag_headers = ["name", "metric", "total", "pct", "target", "target pct", "diff"]
+    tag_colalign = ("left", "left", "right", "right", "right", "right", "right")
     tag_rows = []
     for t in status.tags:
         tag_rows.append([
             t.name,
+            t.metric,
             f"{t.total:.2f}",
             f"{t.pct:.2f}%",
             f"{t.target:.2f}",
