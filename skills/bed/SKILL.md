@@ -9,7 +9,8 @@ bed é uma ferramenta cli de gestão de portfólio pessoal. todos os dados ficam
 - ativos podem ser referenciados por UUID, índice numérico da lista (coluna `#`), ou nome.
 - regras podem ser referenciadas por UUID ou índice numérico da lista.
 - valores monetários usam decimais com duas casas (ex: 1500.00).
-- proporções em regras são valores entre 0 e 1 (ex: 0.60 = 60%).
+- `--target`, `--min` e `--max` entre 0 e 1 representam proporções (ex: 0.60 = 60%); valores acima de 1 representam montantes absolutos.
+- regras são baseadas em valor atual por padrão; use `--invested` para criar uma regra baseada em valor investido.
 
 ## sistema de aliases
 
@@ -45,7 +46,7 @@ execute estes comandos para configurar um novo ambiente bed:
 ```bash
 bed p init
 bed a c -n AAPL --class equity --type stock -q 10 -i 1500 -c 1700
-bed r c --description "equity target" --class equity --proportion 0.60
+bed r c --description "equity target" --class equity --target 0.60
 ```
 
 ## gerenciando ativos
@@ -89,19 +90,22 @@ bed a d AAPL
 
 ```bash
 # criar regra de alocação por classe
-bed r c --description "equity allocation" --class equity --proportion 0.60
+bed r c --description "equity allocation" --class equity --target 0.60
 
 # criar regra com filtro por categoria
-bed r c --description "bonds target" --category bonds --proportion 0.30
+bed r c --description "bonds floor" --category bonds --min 0.30
 
 # criar regra com filtro por tags
-bed r c --description "long-term" -t long-term --proportion 0.50
+bed r c --description "long-term" -t long-term --max 0.50
+
+# criar regra baseada em valor investido
+bed r c --description "invested equity cap" --class equity --target 5000 --invested
 
 # listar regras
 bed rr
 
 # editar regra por índice
-bed r e 1 --proportion 0.65
+bed r e 1 --target 0.65
 
 # excluir regra
 bed r d 2
@@ -118,16 +122,16 @@ bed pp
 ```
 
 o relatório mostra:
-1. **por classe** — distribuição entre equity e fixed-income com proporções atuais
+1. **por classe** — distribuição entre equity e fixed-income com a métrica relevante da regra (`current` ou `invested`)
 2. **por tags** — agrupamento por tags com valores e proporções
-3. **regras** — comparação entre proporção alvo e proporção atual de cada regra
+3. **regras** — comparação entre o valor atual/investido da linha e o `target`, `min` ou `max` configurado
 
 ## resolução de ids
 
 bed aceita nomes legíveis em qualquer lugar onde UUIDs são esperados:
 - ativos: `bed a e AAPL -c 1800` (resolve "AAPL" para UUID)
 - índices: `bed a e 3 -c 1800` (resolve índice #3 da lista para UUID)
-- regras: `bed r e 1 --proportion 0.70` (resolve índice #1 para UUID)
+- regras: `bed r e 1 --target 0.70` (resolve índice #1 para UUID)
 
 ## sincronização com nuvem
 

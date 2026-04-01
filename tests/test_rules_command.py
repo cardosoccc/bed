@@ -44,7 +44,7 @@ class TestRuleCommands:
                 "rule", "create",
                 "-d", "Max 30% equity",
                 "--class", "equity",
-                "-c", "30",
+                "--target", "0.30",
             ])
             assert result.exit_code == 0
             assert "Max 30% equity" in result.output
@@ -58,10 +58,10 @@ class TestRuleCommands:
         runner, session = runner_env
         with patch("bed.commands.rules.get_session", session):
             runner.invoke(cli, [
-                "rule", "create", "-d", "Editable Rule", "-c", "20",
+                "rule", "create", "-d", "Editable Rule", "--target", "20",
             ])
             result = runner.invoke(cli, [
-                "rule", "edit", "1", "-c", "25",
+                "rule", "edit", "1", "--target", "25",
             ])
             assert result.exit_code == 0
             assert "updated" in result.output
@@ -95,13 +95,13 @@ class TestRuleCommands:
             assert result.exit_code == 0
             assert "Listed Rule" in result.output
 
-    def test_create_with_proportion(self, runner_env):
+    def test_create_with_percentage_target(self, runner_env):
         runner, session = runner_env
         with patch("bed.commands.rules.get_session", session):
             result = runner.invoke(cli, [
                 "rule", "create",
                 "-d", "30% equity",
-                "-p", "0.30",
+                "--target", "0.30",
                 "--class", "equity",
             ])
             assert result.exit_code == 0
@@ -109,7 +109,8 @@ class TestRuleCommands:
 
             result = runner.invoke(cli, ["rule", "list"])
             assert result.exit_code == 0
-            assert "30.00%" in result.output
+            assert "0.30" in result.output
+            assert "current" in result.output
 
     def test_create_with_tags(self, runner_env):
         runner, session = runner_env
@@ -120,3 +121,70 @@ class TestRuleCommands:
             ])
             assert result.exit_code == 0
             assert "created" in result.output
+
+    def test_edit_target_rule_to_range(self, runner_env):
+        runner, session = runner_env
+        with patch("bed.commands.rules.get_session", session):
+            runner.invoke(cli, [
+                "rule", "create",
+                "-d", "Convertible Rule",
+                "--target", "0.20",
+            ])
+            result = runner.invoke(cli, [
+                "rule", "edit", "1",
+                "--clear-target",
+                "--min", "0.10",
+                "--max", "0.30",
+            ])
+            assert result.exit_code == 0
+            assert "updated" in result.output
+
+    def test_create_invested_based_rule(self, runner_env):
+        runner, session = runner_env
+        with patch("bed.commands.rules.get_session", session):
+            result = runner.invoke(cli, [
+                "rule", "create",
+                "-d", "Invested Rule",
+                "--target", "5000",
+                "--invested",
+            ])
+            assert result.exit_code == 0
+            assert "created" in result.output
+
+            result = runner.invoke(cli, ["rule", "list"])
+            assert result.exit_code == 0
+            assert "invested" in result.output
+            assert "5000.00" in result.output
+
+    def test_create_with_min_and_max(self, runner_env):
+        runner, session = runner_env
+        with patch("bed.commands.rules.get_session", session):
+            result = runner.invoke(cli, [
+                "rule", "create",
+                "-d", "Range Rule",
+                "--min", "0.10",
+                "--max", "0.30",
+            ])
+            assert result.exit_code == 0
+            assert "created" in result.output
+
+    def test_reject_target_and_min_combination(self, runner_env):
+        runner, session = runner_env
+        with patch("bed.commands.rules.get_session", session):
+            result = runner.invoke(cli, [
+                "rule", "create",
+                "-d", "Invalid Rule",
+                "--target", "0.20",
+                "--min", "0.10",
+            ])
+            assert result.exit_code != 0
+
+    def test_reject_removed_proportion_option(self, runner_env):
+        runner, session = runner_env
+        with patch("bed.commands.rules.get_session", session):
+            result = runner.invoke(cli, [
+                "rule", "create",
+                "-d", "Old Rule",
+                "--proportion", "0.30",
+            ])
+            assert result.exit_code != 0

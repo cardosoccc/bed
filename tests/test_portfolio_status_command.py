@@ -46,10 +46,19 @@ def _create_asset(runner, cli, name, asset_class, asset_type, initial, current,
     return runner.invoke(cli, args)
 
 
-def _create_rule(runner, cli, description, proportion=None, asset_class=None, tags=None):
+def _create_rule(
+    runner, cli, description, target=None, min_value=None, max_value=None,
+    current=True, asset_class=None, tags=None,
+):
     args = ["rule", "create", "-d", description]
-    if proportion is not None:
-        args.extend(["-p", str(proportion)])
+    if target is not None:
+        args.extend(["--target", str(target)])
+    if min_value is not None:
+        args.extend(["--min", str(min_value)])
+    if max_value is not None:
+        args.extend(["--max", str(max_value)])
+    if not current:
+        args.append("--invested")
     if asset_class:
         args.extend(["--class", asset_class])
     if tags:
@@ -116,8 +125,8 @@ class TestPortfolioStatus:
             _create_asset(runner, cli, "Stock1", "equity", "stock", 7000, 8000)
             _create_asset(runner, cli, "Bond1", "fixed-income", "bond", 2000, 2000)
 
-            _create_rule(runner, cli, "60% equity", proportion=0.60, asset_class="equity")
-            _create_rule(runner, cli, "40% bonds", proportion=0.40, asset_class="fixed-income")
+            _create_rule(runner, cli, "60% equity", target=0.60, asset_class="equity")
+            _create_rule(runner, cli, "40% bonds", target=0.40, asset_class="fixed-income")
 
             result = runner.invoke(cli, ["portfolio", "status"])
             assert result.exit_code == 0
@@ -160,14 +169,46 @@ class TestPortfolioStatus:
             _create_asset(runner, cli, "Stock1", "equity", "stock", 5000, 6000, tags="growth")
             _create_asset(runner, cli, "Bond1", "fixed-income", "bond", 4000, 4000, tags="defensive")
 
-            _create_rule(runner, cli, "50% growth", proportion=0.50, tags="growth")
-            _create_rule(runner, cli, "50% defensive", proportion=0.50, tags="defensive")
+            _create_rule(runner, cli, "50% growth", target=0.50, tags="growth")
+            _create_rule(runner, cli, "50% defensive", target=0.50, tags="defensive")
 
             result = runner.invoke(cli, ["portfolio", "status"])
             assert result.exit_code == 0
             # growth: total=6000, target=10000*50%=5000, diff=1000
             assert "5000.00" in result.output
             assert "1000.00" in result.output
+
+    def test_status_with_invested_rule(self, runner_env):
+        runner, session = runner_env
+        with (
+            patch("bed.commands.db_commands.get_session", session),
+            patch("bed.commands.assets.get_session", session),
+            patch("bed.commands.rules.get_session", session),
+        ):
+            _create_asset(runner, cli, "Stock1", "equity", "stock", 7000, 8000)
+            _create_asset(runner, cli, "Bond1", "fixed-income", "bond", 3000, 2000)
+            _create_rule(runner, cli, "50% invested equity", target=0.50, current=False, asset_class="equity")
+
+            result = runner.invoke(cli, ["portfolio", "status"])
+            assert result.exit_code == 0
+            assert "invested" in result.output
+            assert "5000.00" in result.output
+            assert "2000.00" in result.output
+
+    def test_status_with_min_and_max_rules(self, runner_env):
+        runner, session = runner_env
+        with (
+            patch("bed.commands.db_commands.get_session", session),
+            patch("bed.commands.assets.get_session", session),
+            patch("bed.commands.rules.get_session", session),
+        ):
+            _create_asset(runner, cli, "Stock1", "equity", "stock", 5000, 6000, tags="growth")
+            _create_asset(runner, cli, "Bond1", "fixed-income", "bond", 5000, 4000, tags="defensive")
+            _create_rule(runner, cli, "Growth range", min_value=0.50, max_value=0.70, tags="growth")
+
+            result = runner.invoke(cli, ["portfolio", "status"])
+            assert result.exit_code == 0
+            assert "0.00" in result.output
 
     def test_status_no_tags(self, runner_env):
         runner, session = runner_env

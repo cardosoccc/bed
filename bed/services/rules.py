@@ -28,7 +28,23 @@ async def update_rule(db: AsyncSession, rule_id: uuid.UUID, data: RuleUpdate) ->
     rule = await db.get(Rule, rule_id)
     if not rule:
         return None
-    for key, value in data.model_dump(exclude_none=True).items():
+
+    payload = {
+        "description": rule.description,
+        "current": rule.current,
+        "target": float(rule.target) if rule.target is not None else None,
+        "min": float(rule.min) if rule.min is not None else None,
+        "max": float(rule.max) if rule.max is not None else None,
+        "asset_class": rule.asset_class,
+        "asset_type": rule.asset_type,
+        "category": rule.category,
+        "subcategory": rule.subcategory,
+        "tags": list(rule.tags or []),
+    }
+    payload.update(data.model_dump(exclude_unset=True))
+    validated = RuleCreate(**payload)
+
+    for key, value in validated.model_dump().items():
         setattr(rule, key, value)
     await db.commit()
     await db.refresh(rule)
